@@ -241,8 +241,7 @@ main {
 
 footer {
     flex-shrink: 0;
-    padding: var(--spacing-sm) var(--spacing-lg);
-    padding-bottom: env(safe-area-inset-bottom);
+    padding: var(--spacing-sm) var(--spacing-lg) 0 var(--spacing-lg);
     background: var(--color-bg);
     z-index: 10;
 }
