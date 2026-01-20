@@ -196,6 +196,7 @@ body {
     user-select: none;
     outline: none;
     cursor: unset;
+    -webkit-tap-highlight-color: transparent;
 }
 
 .problem-form-inline summary::-webkit-details-marker {
