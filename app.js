@@ -323,6 +323,23 @@ export class BankanApp {
     #bindGlobalEvents() {
         const app = this.#elements.app;
         
+        let touchStartY = 0;
+        let isScrolling = false;
+        
+        // Track touch start for scroll detection
+        app.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+            isScrolling = false;
+        }, { passive: true });
+        
+        // Detect if user is scrolling
+        app.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            if (Math.abs(touchY - touchStartY) > 10) {
+                isScrolling = true;
+            }
+        }, { passive: true });
+        
         // Single delegated event handler for all clicks
         const handleClick = (e) => {
             // New session button
@@ -346,7 +363,7 @@ export class BankanApp {
             
             // Session card click (open session)
             const sessionCard = e.target.closest('.session-card');
-            if (sessionCard && this.#currentScreen === 'sessions') {
+            if (sessionCard && this.#currentScreen === 'sessions' && !isScrolling) {
                 const sessionId = parseInt(sessionCard.dataset.sessionId, 10);
                 this.#showProblemTracker(sessionId);
                 return;
@@ -481,45 +498,47 @@ export class BankanApp {
         }
         
         this.#elements.app.innerHTML = `
-            <header>
-                <div class="tracker-header">
-                    <button class="back-btn" id="backBtn">← Back</button>
-                    <details class="problem-form-inline" id="problemForm">
-                        <summary>Add problem</summary>
-                        
-                        <div class="form-content">
-                            <div class="form-group">
-                                <label>Hold color</label>
-                                <div class="color-palette" id="holdColorPalette"></div>
+            <div class="tracker-screen">
+                <header>
+                    <div class="tracker-header">
+                        <button class="back-btn" id="backBtn">← Back</button>
+                        <details class="problem-form-inline" id="problemForm">
+                            <summary>Add problem</summary>
+                            
+                            <div class="form-content">
+                                <div class="form-group">
+                                    <label>Hold color</label>
+                                    <div class="color-palette" id="holdColorPalette"></div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label>Grade color</label>
+                                    <div class="color-palette" id="gradeColorPalette"></div>
+                                </div>
+
+                                <button class="btn-primary" id="addProblemBtn">Add Problem</button>
                             </div>
-
-                            <div class="form-group">
-                                <label>Grade color</label>
-                                <div class="color-palette" id="gradeColorPalette"></div>
-                            </div>
-
-                            <button class="btn-primary" id="addProblemBtn">Add Problem</button>
-                        </div>
-                    </details>
-                </div>
-            </header>
-
-            <main>
-                <section class="problems-list" id="problemsList"></section>
-            </main>
-
-            <footer>
-                <div class="timer-section">
-                    <div class="timer-display" id="timerDisplay">--:--</div>
-                    <div class="timer-controls" id="timerControls">
-                        <button class="timer-btn" data-minutes="1">1m</button>
-                        <button class="timer-btn" data-minutes="2">2m</button>
-                        <button class="timer-btn" data-minutes="3">3m</button>
-                        <button class="timer-btn" data-minutes="4">4m</button>
-                        <button class="timer-btn" data-minutes="5">5m</button>
+                        </details>
                     </div>
-                </div>
-            </footer>
+                </header>
+
+                <main class="problems-list-container">
+                    <section class="problems-list" id="problemsList"></section>
+                </main>
+
+                <footer>
+                    <div class="timer-section">
+                        <div class="timer-display" id="timerDisplay">--:--</div>
+                        <div class="timer-controls" id="timerControls">
+                            <button class="timer-btn" data-minutes="1">1m</button>
+                            <button class="timer-btn" data-minutes="2">2m</button>
+                            <button class="timer-btn" data-minutes="3">3m</button>
+                            <button class="timer-btn" data-minutes="4">4m</button>
+                            <button class="timer-btn" data-minutes="5">5m</button>
+                        </div>
+                    </div>
+                </footer>
+            </div>
         `;
         
         // Re-initialize timer display
