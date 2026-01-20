@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Bankan">
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6B6B' width='100' height='100' rx='20'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>🧗</text></svg>">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🧗</text></svg>">
+    <title>Bankan - Boulder Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #F8F9FA;
+            display: flex;
+            flex-direction: column;
+            padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        }
+
+        header {
+            flex-shrink: 0;
+            padding: 16px;
+            background: #F8F9FA;
+            z-index: 10;
+        }
+
+        main {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 16px 16px;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        footer {
+            flex-shrink: 0;
+            padding: 16px;
+            background: #F8F9FA;
+            z-index: 10;
+        }
+
+        details.problem-form {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        summary {
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            list-style: none;
+            user-select: none;
+            color: #1C1C1E;
+        }
+
+        summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details[open] summary {
+            margin-bottom: 16px;
+        }
+
+        .form-content {
+            margin-top: 12px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #6C6C70;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+        }
+
+        .color-option {
+            aspect-ratio: 1;
+            border: 3px solid transparent;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .color-option.selected {
+            border-color: #007AFF;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(0,122,255,0.3);
+        }
+
+        button {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: #2C2C2E;
+            color: white;
+            box-shadow: 0 2px 8px rgba(44,44,46,0.3);
+        }
+
+        .btn-primary:active {
+            transform: scale(0.98);
+            background: #1C1C1E;
+        }
+
+        .btn-danger {
+            background: #FF3B30;
+            color: white;
+            box-shadow: 0 2px 8px rgba(255,59,48,0.3);
+        }
+
+        .btn-danger:active {
+            transform: scale(0.98);
+        }
+
+        .problems-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .problem-card {
+            background: white;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .problem-header {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 16px;
+            align-items: center;
+        }
+
+        .color-indicator {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+
+        .color-divider {
+            width: 2px;
+            height: 24px;
+            background: #E5E5EA;
+            margin: 0 4px;
+        }
+
+        .attempts-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+
+        .attempt-btn {
+            aspect-ratio: 1;
+            border: 2px solid #E5E5EA;
+            background: white;
+            border-radius: 12px;
+            font-size: 18px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            padding: 0;
+            margin: 0;
+            color: #8E8E93;
+            transition: all 0.2s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+
+        .attempt-btn:active {
+            transform: scale(0.95);
+        }
+
+        .attempt-btn.checked {
+            background: #52C47B;
+            border-color: #52C47B;
+            color: white;
+            box-shadow: 0 4px 8px rgba(82,196,123,0.25);
+        }
+
+        .review-input {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #E5E5EA;
+            border-radius: 10px;
+            font-size: 15px;
+            margin-top: 8px;
+            display: none;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .review-input:focus {
+            outline: none;
+            border-color: #007AFF;
+            box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
+        }
+
+        .review-input.show {
+            display: block;
+        }
+
+        .review-text {
+            font-size: 14px;
+            color: #6C6C70;
+            margin-top: 8px;
+            padding: 10px 12px;
+            background: #F8F9FA;
+            border-radius: 10px;
+            line-height: 1.4;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #8E8E93;
+            padding: 40px 20px;
+            font-size: 15px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <details class="problem-form" id="problemForm" open>
+            <summary>Add Boulder Problem</summary>
+            
+            <div class="form-content">
+                <div class="form-group">
+                    <label>Hold Color</label>
+                    <div class="color-palette" id="holdColorPalette"></div>
+                </div>
+
+                <div class="form-group">
+                    <label>Grade Color</label>
+                    <div class="color-palette" id="gradeColorPalette"></div>
+                </div>
+
+                <button class="btn-primary" onclick="addProblem()">Add Problem</button>
+            </div>
+        </details>
+    </header>
+
+    <main>
+        <section class="problems-list" id="problemsList">
+            <!-- Problems will be added here dynamically -->
+        </section>
+    </main>
+
+    <footer>
+        <button class="btn-danger" onclick="clearSession()">Clear Session</button>
+    </footer>
+
+    <script>
+        const HOLD_COLORS = {
+            green: '#52C47B',
+            yellow: '#FFD93D',
+            orange: '#FF8A5C',
+            blue: '#4A90E2',
+            red: '#FF6B6B',
+            black: '#2C2C2E',
+            white: '#FFFFFF',
+            purple: '#9B7FD8',
+            teal: '#4ECDC4',
+            pink: '#FF85A2'
+        };
+
+        const GRADE_COLORS = {
+            green: '#52C47B',
+            yellow: '#FFD93D',
+            orange: '#FF8A5C',
+            blue: '#4A90E2',
+            red: '#FF6B6B',
+            black: '#2C2C2E',
+            white: '#FFFFFF',
+            purple: '#9B7FD8'
+        };
+
+        let problems = [];
+        let currentReviewAttempt = null;
+        let currentReviewProblem = null;
+        let selectedHoldColor = 'blue';
+        let selectedGradeColor = 'green';
+
+        function initColorPalettes() {
+            const holdPalette = document.getElementById('holdColorPalette');
+            const gradePalette = document.getElementById('gradeColorPalette');
+
+            holdPalette.innerHTML = Object.entries(HOLD_COLORS).map(([name, color]) => 
+                `<div class="color-option ${name === selectedHoldColor ? 'selected' : ''}" 
+                      style="background: ${color}; ${color === '#FFFFFF' ? 'border: 1px solid #ddd;' : ''}" 
+                      onclick="selectHoldColor('${name}')"
+                      data-color="${name}"></div>`
+            ).join('');
+
+            gradePalette.innerHTML = Object.entries(GRADE_COLORS).map(([name, color]) => 
+                `<div class="color-option ${name === selectedGradeColor ? 'selected' : ''}" 
+                      style="background: ${color}; ${color === '#FFFFFF' ? 'border: 1px solid #ddd;' : ''}" 
+                      onclick="selectGradeColor('${name}')"
+                      data-color="${name}"></div>`
+            ).join('');
+        }
+
+        function selectHoldColor(colorName) {
+            selectedHoldColor = colorName;
+            initColorPalettes();
+        }
+
+        function selectGradeColor(colorName) {
+            selectedGradeColor = colorName;
+            initColorPalettes();
+        }
+
+        function loadProblems() {
+            const saved = localStorage.getItem('bankan_problems');
+            if (saved) {
+                problems = JSON.parse(saved);
+                renderProblems();
+                updateFormState();
+            }
+        }
+
+        function updateFormState() {
+            const form = document.getElementById('problemForm');
+            if (problems.length > 0 && form.hasAttribute('open')) {
+                form.removeAttribute('open');
+            }
+        }
+
+        function saveProblems() {
+            localStorage.setItem('bankan_problems', JSON.stringify(problems));
+        }
+
+        function addProblem() {
+            const problem = {
+                id: Date.now(),
+                holdColor: HOLD_COLORS[selectedHoldColor],
+                gradeColor: GRADE_COLORS[selectedGradeColor],
+                attempts: [
+                    { checked: false, review: '' },
+                    { checked: false, review: '' },
+                    { checked: false, review: '' },
+                    { checked: false, review: '' },
+                    { checked: false, review: '' }
+                ]
+            };
+
+            problems.push(problem);
+            saveProblems();
+            renderProblems();
+            updateFormState();
+        }
+
+        function toggleAttempt(problemId, attemptIndex) {
+            const problem = problems.find(p => p.id === problemId);
+            if (!problem) return;
+
+            problem.attempts[attemptIndex].checked = !problem.attempts[attemptIndex].checked;
+            saveProblems();
+            
+            currentReviewProblem = problemId;
+            currentReviewAttempt = attemptIndex;
+            
+            renderProblems();
+            
+            setTimeout(() => {
+                const reviewInput = document.getElementById(`review-${problemId}-${attemptIndex}`);
+                if (reviewInput) {
+                    reviewInput.classList.add('show');
+                    reviewInput.focus();
+                }
+            }, 100);
+        }
+
+        function saveReview(problemId, attemptIndex) {
+            const problem = problems.find(p => p.id === problemId);
+            if (!problem) return;
+
+            const reviewInput = document.getElementById(`review-${problemId}-${attemptIndex}`);
+            problem.attempts[attemptIndex].review = reviewInput.value;
+            saveProblems();
+            
+            currentReviewProblem = null;
+            currentReviewAttempt = null;
+            
+            renderProblems();
+        }
+
+        function renderProblems() {
+            const container = document.getElementById('problemsList');
+            
+            if (problems.length === 0) {
+                container.innerHTML = '<div class="empty-state">No problems yet. Add one above! 🧗</div>';
+                return;
+            }
+
+            container.innerHTML = problems.map(problem => `
+                <div class="problem-card">
+                    <div class="problem-header">
+                        <div class="color-indicator" style="background: ${problem.holdColor}; ${problem.holdColor === '#FFFFFF' ? 'border: 1px solid #E5E5EA;' : ''}"></div>
+                        <div class="color-divider"></div>
+                        <div class="color-indicator" style="background: ${problem.gradeColor}; ${problem.gradeColor === '#FFFFFF' ? 'border: 1px solid #E5E5EA;' : ''}"></div>
+                    </div>
+
+                    <div class="attempts-grid">
+                        ${problem.attempts.map((attempt, index) => `
+                            <button 
+                                class="attempt-btn ${attempt.checked ? 'checked' : ''}"
+                                onclick="toggleAttempt(${problem.id}, ${index})"
+                            >
+                                ${attempt.checked ? '✓' : index + 1}
+                            </button>
+                        `).join('')}
+                    </div>
+
+                    ${problem.attempts.map((attempt, index) => {
+                        if (attempt.review) {
+                            return `<div class="review-text"><strong>Attempt ${index + 1}:</strong> ${attempt.review}</div>`;
+                        }
+                        if (currentReviewProblem === problem.id && currentReviewAttempt === index) {
+                            return `<input 
+                                type="text" 
+                                class="review-input" 
+                                id="review-${problem.id}-${index}"
+                                placeholder="Add review for attempt ${index + 1}..."
+                                onblur="saveReview(${problem.id}, ${index})"
+                                onkeypress="if(event.key === 'Enter') { saveReview(${problem.id}, ${index}); }"
+                            />`;
+                        }
+                        return '';
+                    }).join('')}
+                </div>
+            `).join('');
+        }
+
+        function clearSession() {
+            problems = [];
+            saveProblems();
+            renderProblems();
+            const form = document.getElementById('problemForm');
+            if (!form.hasAttribute('open')) {
+                form.setAttribute('open', '');
+            }
+        }
+
+        initColorPalettes();
+        loadProblems();
+    </script>
+</body>
+</html>
