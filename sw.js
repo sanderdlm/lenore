@@ -1,8 +1,10 @@
-const CACHE_VERSION = 'v1.0.4';
+const CACHE_VERSION = 'v1.2.0';
 const CACHE_NAME = `bankan-${CACHE_VERSION}`;
 const urlsToCache = [
   '/',
-  '/index.html'
+  '/index.html',
+  '/styles.css',
+  '/app.js'
 ];
 
 self.addEventListener('install', (event) => {
