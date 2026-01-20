@@ -9,7 +9,7 @@
     <link rel="manifest" href="/manifest.json">
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect fill='%23FF6B6B' width='100' height='100' rx='20'/><text x='50' y='70' font-size='60' text-anchor='middle' fill='white' font-family='Arial'>🧗</text></svg>">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='80' font-size='80'>🧗</text></svg>">
-    <title>Bankan - Boulder Tracker</title>
+    <title>Bankan</title>
     <style>
         * {
             margin: 0;
@@ -303,16 +303,16 @@
 <body>
     <header>
         <details class="problem-form" id="problemForm" open>
-            <summary>Add Boulder Problem</summary>
+            <summary>Add problem</summary>
             
             <div class="form-content">
                 <div class="form-group">
-                    <label>Hold Color</label>
+                    <label>Hold color</label>
                     <div class="color-palette" id="holdColorPalette"></div>
                 </div>
 
                 <div class="form-group">
-                    <label>Grade Color</label>
+                    <label>Grade color</label>
                     <div class="color-palette" id="gradeColorPalette"></div>
                 </div>
 
@@ -457,6 +457,14 @@
             currentReviewAttempt = attemptIndex;
             
             renderProblems();
+            
+            // Explicit focus after render
+            setTimeout(() => {
+                const input = document.getElementById(`review-${problemId}-${attemptIndex}`);
+                if (input) {
+                    input.focus();
+                }
+            }, 100);
         }
 
         function saveReview(problemId, attemptIndex) {
@@ -510,7 +518,6 @@
                                 class="review-input show" 
                                 id="review-${problem.id}-${index}"
                                 placeholder="Add review for attempt ${index + 1}..."
-                                autofocus
                                 onblur="saveReview(${problem.id}, ${index})"
                                 onkeypress="if(event.key === 'Enter') { saveReview(${problem.id}, ${index}); }"
                             />`;
