@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Bankan">
@@ -45,9 +45,51 @@
 
         footer {
             flex-shrink: 0;
-            padding: 16px;
+            padding: 8px 16px 16px;
             background: #F8F9FA;
             z-index: 10;
+        }
+
+        .timer-section {
+            margin-bottom: 8px;
+        }
+
+        .timer-display {
+            text-align: center;
+            font-size: 32px;
+            font-weight: 700;
+            color: #2C2C2E;
+            margin-bottom: 8px;
+            font-variant-numeric: tabular-nums;
+        }
+
+        .timer-controls {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .timer-btn {
+            padding: 10px;
+            border: 2px solid #E5E5EA;
+            background: white;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            color: #2C2C2E;
+            transition: all 0.2s;
+        }
+
+        .timer-btn:active {
+            transform: scale(0.95);
+        }
+
+        .timer-btn.active {
+            border-color: #2C2C2E;
+            background: #2C2C2E;
+            color: white;
         }
 
         details.problem-form {
@@ -135,13 +177,14 @@
         }
 
         .btn-danger {
-            background: #FF3B30;
+            background: #E57373;
             color: white;
-            box-shadow: 0 2px 8px rgba(255,59,48,0.3);
+            box-shadow: 0 2px 8px rgba(229,115,115,0.3);
         }
 
         .btn-danger:active {
             transform: scale(0.98);
+            background: #D66060;
         }
 
         .problems-list {
@@ -219,7 +262,7 @@
             padding: 10px 12px;
             border: 1px solid #E5E5EA;
             border-radius: 10px;
-            font-size: 15px;
+            font-size: 16px;
             margin-top: 8px;
             display: none;
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -281,6 +324,16 @@
     </main>
 
     <footer>
+        <div class="timer-section">
+            <div class="timer-display" id="timerDisplay">--:--</div>
+            <div class="timer-controls">
+                <button class="timer-btn" onclick="startTimer(1)">1m</button>
+                <button class="timer-btn" onclick="startTimer(2)">2m</button>
+                <button class="timer-btn" onclick="startTimer(3)">3m</button>
+                <button class="timer-btn" onclick="startTimer(4)">4m</button>
+                <button class="timer-btn" onclick="startTimer(5)">5m</button>
+            </div>
+        </div>
         <button class="btn-danger" onclick="clearSession()">Clear Session</button>
     </footer>
 
@@ -314,6 +367,8 @@
         let currentReviewProblem = null;
         let selectedHoldColor = 'blue';
         let selectedGradeColor = 'green';
+        let timerInterval = null;
+        let timerEndTime = null;
 
         function initColorPalettes() {
             const holdPalette = document.getElementById('holdColorPalette');
@@ -402,7 +457,7 @@
                     reviewInput.classList.add('show');
                     reviewInput.focus();
                 }
-            }, 100);
+            }, 50);
         }
 
         function saveReview(problemId, attemptIndex) {
@@ -474,6 +529,46 @@
             if (!form.hasAttribute('open')) {
                 form.setAttribute('open', '');
             }
+        }
+
+        function startTimer(minutes) {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            timerEndTime = Date.now() + (minutes * 60 * 1000);
+            updateTimerDisplay();
+            
+            timerInterval = setInterval(() => {
+                const remaining = timerEndTime - Date.now();
+                
+                if (remaining <= 0) {
+                    clearInterval(timerInterval);
+                    timerInterval = null;
+                    timerEndTime = null;
+                    document.getElementById('timerDisplay').textContent = '00:00';
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate([200, 100, 200]);
+                    }
+                } else {
+                    updateTimerDisplay();
+                }
+            }, 100);
+        }
+
+        function updateTimerDisplay() {
+            if (!timerEndTime) {
+                document.getElementById('timerDisplay').textContent = '--:--';
+                return;
+            }
+            
+            const remaining = Math.max(0, timerEndTime - Date.now());
+            const totalSeconds = Math.ceil(remaining / 1000);
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            
+            document.getElementById('timerDisplay').textContent = 
+                `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
         }
 
         initColorPalettes();
