@@ -204,6 +204,29 @@ button {
     padding: 16px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    position: relative;
+    transition: transform 0.2s, opacity 0.2s;
+}
+
+.problem-card.swiping {
+    opacity: 0.7;
+}
+
+.delete-hint {
+    position: absolute;
+    top: 50%;
+    right: 16px;
+    transform: translateY(-50%);
+    color: #E57373;
+    font-weight: 600;
+    font-size: 14px;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+}
+
+.problem-card.swiping .delete-hint {
+    opacity: 1;
 }
 
 .problem-header {
