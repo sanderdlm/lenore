@@ -7,7 +7,7 @@
 const DOUBLE_TAP_THRESHOLD_MS = 300;
 const SW_UPDATE_INTERVAL_MS = 60000;
 const TIMER_TICK_MS = 100;
-const STORAGE_KEY = 'bankan_problems';
+const STORAGE_KEY = 'bankan_sessions';
 
 const HOLD_COLORS = {
     green: '#52C47B',
@@ -44,6 +44,27 @@ function escapeHtml(text) {
 
 function isValidColor(color) {
     return /^#[0-9A-Fa-f]{6}$/.test(color);
+}
+
+function formatSessionDate(timestamp) {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const sessionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+    
+    const timeStr = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+    
+    if (sessionDate.getTime() === today.getTime()) {
+        return `Today ${timeStr}`;
+    }
+    
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    if (sessionDate.getTime() === yesterday.getTime()) {
+        return `Yesterday ${timeStr}`;
+    }
+    
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', hour12: true });
 }
 
 /**
@@ -117,10 +138,10 @@ class Timer {
 }
 
 /**
- * ProblemStore class - handles data persistence
+ * SessionsStore class - handles sessions data persistence
  */
-class ProblemStore {
-    #problems = [];
+class SessionsStore {
+    #sessions = [];
 
     constructor() {
         this.#load();
@@ -132,37 +153,56 @@ class ProblemStore {
             if (saved) {
                 const parsed = JSON.parse(saved);
                 if (Array.isArray(parsed)) {
-                    this.#problems = parsed.filter(p =>
-                        p && typeof p.id === 'number' &&
-                        isValidColor(p.holdColor) &&
-                        isValidColor(p.gradeColor) &&
-                        Array.isArray(p.attempts)
+                    this.#sessions = parsed.filter(s =>
+                        s && typeof s.id === 'number' &&
+                        typeof s.createdAt === 'number' &&
+                        Array.isArray(s.problems)
                     );
                 }
             }
         } catch (e) {
-            console.error('Failed to load problems:', e);
-            this.#problems = [];
+            console.error('Failed to load sessions:', e);
+            this.#sessions = [];
         }
     }
 
     #save() {
         try {
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.#problems));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(this.#sessions));
         } catch (e) {
-            console.error('Failed to save problems:', e);
+            console.error('Failed to save sessions:', e);
         }
     }
 
     getAll() {
-        return this.#problems;
+        return this.#sessions.sort((a, b) => b.createdAt - a.createdAt);
     }
 
     getById(id) {
-        return this.#problems.find(p => p.id === id);
+        return this.#sessions.find(s => s.id === id);
     }
 
-    add(holdColor, gradeColor) {
+    create() {
+        const timestamp = Date.now();
+        const session = {
+            id: timestamp,
+            createdAt: timestamp,
+            problems: []
+        };
+        this.#sessions.push(session);
+        this.#save();
+        return session;
+    }
+
+    deleteById(id) {
+        this.#sessions = this.#sessions.filter(s => s.id !== id);
+        this.#save();
+    }
+
+    addProblem(sessionId, holdColor, gradeColor) {
+        const session = this.getById(sessionId);
+        if (!session) return null;
+
         const problem = {
             id: Date.now(),
             holdColor,
@@ -170,13 +210,16 @@ class ProblemStore {
             attempts: Array.from({ length: 5 }, () => ({ checked: false, review: '' }))
         };
 
-        this.#problems.push(problem);
+        session.problems.push(problem);
         this.#save();
         return problem;
     }
 
-    updateAttempt(problemId, attemptIndex, updates) {
-        const problem = this.getById(problemId);
+    updateAttempt(sessionId, problemId, attemptIndex, updates) {
+        const session = this.getById(sessionId);
+        if (!session) return false;
+
+        const problem = session.problems.find(p => p.id === problemId);
         if (problem && problem.attempts[attemptIndex]) {
             Object.assign(problem.attempts[attemptIndex], updates);
             this.#save();
@@ -185,18 +228,8 @@ class ProblemStore {
         return false;
     }
 
-    deleteById(id) {
-        this.#problems = this.#problems.filter(p => p.id !== id);
-        this.#save();
-    }
-
-    clear() {
-        this.#problems = [];
-        this.#save();
-    }
-
     get length() {
-        return this.#problems.length;
+        return this.#sessions.length;
     }
 }
 
@@ -257,147 +290,275 @@ class ColorPalette {
  * Main BankanApp class
  */
 export class BankanApp {
-    #store;
+    #sessionsStore;
+    #currentSessionId = null;
     #timer;
     #holdPalette;
     #gradePalette;
     #elements;
     #currentReview = { problemId: null, attemptIndex: null };
+    #currentScreen = 'sessions'; // 'sessions' or 'tracker'
 
     constructor() {
         this.#elements = {
-            holdColorPalette: document.getElementById('holdColorPalette'),
-            gradeColorPalette: document.getElementById('gradeColorPalette'),
-            problemsList: document.getElementById('problemsList'),
-            problemForm: document.getElementById('problemForm'),
-            timerDisplay: document.getElementById('timerDisplay'),
-            timerControls: document.getElementById('timerControls'),
-            addProblemBtn: document.getElementById('addProblemBtn'),
-            clearSessionBtn: document.getElementById('clearSessionBtn')
+            app: document.getElementById('app'),
+            // Screens
+            sessionsScreen: null,
+            trackerScreen: null
         };
 
-        this.#store = new ProblemStore();
+        this.#sessionsStore = new SessionsStore();
 
-        this.#timer = new Timer(this.#elements.timerDisplay, () => {
+        this.#timer = new Timer(document.createElement('div'), () => {
             if ('vibrate' in navigator) {
                 navigator.vibrate([200, 100, 200]);
             }
         });
 
-        this.#holdPalette = new ColorPalette(
-            this.#elements.holdColorPalette,
-            HOLD_COLORS,
-            'blue',
-            () => {}
-        );
-
-        this.#gradePalette = new ColorPalette(
-            this.#elements.gradeColorPalette,
-            GRADE_COLORS,
-            'green',
-            () => {}
-        );
-
-        this.#bindEvents();
-        this.#render();
-        this.#updateFormState();
+        this.#bindGlobalEvents();
+        this.#showSessionsList();
         this.#registerServiceWorker();
     }
 
-    #bindEvents() {
-        // Add problem button
-        this.#elements.addProblemBtn.addEventListener('click', () => this.#addProblem());
-        this.#elements.addProblemBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            this.#addProblem();
-        });
-
-        // Clear session button
-        this.#elements.clearSessionBtn.addEventListener('click', () => this.#clearSession());
-        this.#elements.clearSessionBtn.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            this.#clearSession();
-        });
-
-        // Timer display (double-tap to clear)
-        this.#elements.timerDisplay.addEventListener('click', () => this.#timer.handleTap());
-        this.#elements.timerDisplay.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            this.#timer.handleTap();
-        });
-
-        // Timer control buttons
-        const handleTimerBtn = (e) => {
-            const btn = e.target.closest('.timer-btn');
-            if (btn) {
-                const minutes = parseInt(btn.dataset.minutes, 10);
+    #bindGlobalEvents() {
+        const app = this.#elements.app;
+        
+        // Single delegated event handler for all clicks
+        const handleClick = (e) => {
+            // New session button
+            if (e.target.closest('#newSessionBtn')) {
+                const session = this.#sessionsStore.create();
+                this.#showProblemTracker(session.id);
+                return;
+            }
+            
+            // Delete session button
+            const deleteBtn = e.target.closest('.session-delete-btn');
+            if (deleteBtn) {
+                e.stopPropagation();
+                const sessionId = parseInt(deleteBtn.dataset.sessionId, 10);
+                if (confirm('Delete this session?')) {
+                    this.#sessionsStore.deleteById(sessionId);
+                    this.#showSessionsList();
+                }
+                return;
+            }
+            
+            // Session card click (open session)
+            const sessionCard = e.target.closest('.session-card');
+            if (sessionCard && this.#currentScreen === 'sessions') {
+                const sessionId = parseInt(sessionCard.dataset.sessionId, 10);
+                this.#showProblemTracker(sessionId);
+                return;
+            }
+            
+            // Back button
+            if (e.target.closest('#backBtn')) {
+                this.#showSessionsList();
+                return;
+            }
+            
+            // Add problem button
+            if (e.target.closest('#addProblemBtn')) {
+                this.#sessionsStore.addProblem(
+                    this.#currentSessionId,
+                    this.#holdPalette.getSelectedColor(),
+                    this.#gradePalette.getSelectedColor()
+                );
+                this.#renderProblems();
+                this.#updateFormState();
+                return;
+            }
+            
+            // Timer controls
+            const timerBtn = e.target.closest('.timer-btn');
+            if (timerBtn) {
+                const minutes = parseInt(timerBtn.dataset.minutes, 10);
                 this.#timer.start(minutes);
+                return;
             }
-        };
-
-        this.#elements.timerControls.addEventListener('click', handleTimerBtn);
-        this.#elements.timerControls.addEventListener('touchend', (e) => {
-            const btn = e.target.closest('.timer-btn');
-            if (btn) {
-                e.preventDefault();
-                handleTimerBtn(e);
+            
+            // Timer display (double-tap to clear)
+            if (e.target.closest('#timerDisplay')) {
+                this.#timer.handleTap();
+                return;
             }
-        });
-
-        // Problems list (event delegation)
-        const handleAttemptClick = (e) => {
+            
+            // Attempt button
             const attemptBtn = e.target.closest('.attempt-btn');
             if (attemptBtn) {
                 const card = attemptBtn.closest('.problem-card');
                 const problemId = parseInt(card.dataset.problemId, 10);
                 const attemptIndex = parseInt(attemptBtn.dataset.attemptIndex, 10);
                 this.#toggleAttempt(problemId, attemptIndex);
+                return;
             }
         };
-
-        this.#elements.problemsList.addEventListener('click', handleAttemptClick);
-        this.#elements.problemsList.addEventListener('touchend', (e) => {
-            const btn = e.target.closest('.attempt-btn');
-            if (btn) {
+        
+        const handleTouch = (e) => {
+            const target = e.target;
+            
+            if (target.closest('#newSessionBtn') || 
+                target.closest('.session-delete-btn') ||
+                target.closest('.session-card') ||
+                target.closest('#backBtn') ||
+                target.closest('#addProblemBtn') ||
+                target.closest('.timer-btn') ||
+                target.closest('#timerDisplay') ||
+                target.closest('.attempt-btn')) {
                 e.preventDefault();
-                handleAttemptClick(e);
+                handleClick(e);
             }
-        });
-
-        // Review input events (delegated)
-        this.#elements.problemsList.addEventListener('blur', (e) => {
+        };
+        
+        app.addEventListener('click', handleClick);
+        app.addEventListener('touchend', handleTouch);
+        
+        // Review input events
+        app.addEventListener('blur', (e) => {
             if (e.target.classList.contains('review-input')) {
                 const problemId = parseInt(e.target.dataset.problemId, 10);
                 const attemptIndex = parseInt(e.target.dataset.attemptIndex, 10);
                 this.#saveReview(problemId, attemptIndex, e.target.value);
             }
         }, true);
-
-        this.#elements.problemsList.addEventListener('keypress', (e) => {
+        
+        app.addEventListener('keypress', (e) => {
             if (e.target.classList.contains('review-input') && e.key === 'Enter') {
                 const problemId = parseInt(e.target.dataset.problemId, 10);
                 const attemptIndex = parseInt(e.target.dataset.attemptIndex, 10);
                 this.#saveReview(problemId, attemptIndex, e.target.value);
             }
         });
-
+        
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             this.#timer.destroy();
         });
     }
 
-    #addProblem() {
-        this.#store.add(
-            this.#holdPalette.getSelectedColor(),
-            this.#gradePalette.getSelectedColor()
+    // ==================== SCREEN NAVIGATION ====================
+    
+    #showSessionsList() {
+        this.#currentScreen = 'sessions';
+        this.#currentSessionId = null;
+        
+        const sessions = this.#sessionsStore.getAll();
+        
+        this.#elements.app.innerHTML = `
+            <div class="sessions-screen">
+                <header class="sessions-header">
+                    <h1>Sessions</h1>
+                    <button class="btn-primary new-session-btn" id="newSessionBtn">New Session</button>
+                </header>
+                
+                <main class="sessions-list">
+                    ${sessions.length === 0 ? 
+                        '<div class="empty-state">No sessions yet. Start a new one! 🧗</div>' :
+                        sessions.map(session => `
+                            <div class="session-card" data-session-id="${session.id}">
+                                <div class="session-info">
+                                    <div class="session-date">${formatSessionDate(session.createdAt)}</div>
+                                    <div class="session-meta">${session.problems.length} problem${session.problems.length !== 1 ? 's' : ''}</div>
+                                </div>
+                                <button class="session-delete-btn" data-session-id="${session.id}">×</button>
+                            </div>
+                        `).join('')
+                    }
+                </main>
+            </div>
+        `;
+    }
+    
+    #showProblemTracker(sessionId) {
+        this.#currentScreen = 'tracker';
+        this.#currentSessionId = sessionId;
+        
+        const session = this.#sessionsStore.getById(sessionId);
+        if (!session) {
+            this.#showSessionsList();
+            return;
+        }
+        
+        this.#elements.app.innerHTML = `
+            <header>
+                <div class="tracker-header">
+                    <button class="back-btn" id="backBtn">← Back</button>
+                    <details class="problem-form-inline" id="problemForm">
+                        <summary>Add problem</summary>
+                        
+                        <div class="form-content">
+                            <div class="form-group">
+                                <label>Hold color</label>
+                                <div class="color-palette" id="holdColorPalette"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Grade color</label>
+                                <div class="color-palette" id="gradeColorPalette"></div>
+                            </div>
+
+                            <button class="btn-primary" id="addProblemBtn">Add Problem</button>
+                        </div>
+                    </details>
+                </div>
+            </header>
+
+            <main>
+                <section class="problems-list" id="problemsList"></section>
+            </main>
+
+            <footer>
+                <div class="timer-section">
+                    <div class="timer-display" id="timerDisplay">--:--</div>
+                    <div class="timer-controls" id="timerControls">
+                        <button class="timer-btn" data-minutes="1">1m</button>
+                        <button class="timer-btn" data-minutes="2">2m</button>
+                        <button class="timer-btn" data-minutes="3">3m</button>
+                        <button class="timer-btn" data-minutes="4">4m</button>
+                        <button class="timer-btn" data-minutes="5">5m</button>
+                    </div>
+                </div>
+            </footer>
+        `;
+        
+        // Re-initialize timer display
+        const timerDisplay = document.getElementById('timerDisplay');
+        this.#timer = new Timer(timerDisplay, () => {
+            if ('vibrate' in navigator) {
+                navigator.vibrate([200, 100, 200]);
+            }
+        });
+        
+        // Initialize color palettes
+        this.#holdPalette = new ColorPalette(
+            document.getElementById('holdColorPalette'),
+            HOLD_COLORS,
+            'blue',
+            () => {}
         );
-        this.#render();
+
+        this.#gradePalette = new ColorPalette(
+            document.getElementById('gradeColorPalette'),
+            GRADE_COLORS,
+            'green',
+            () => {}
+        );
+        
+        this.#renderProblems();
         this.#updateFormState();
     }
-
+    
+    // ==================== EVENT BINDINGS ====================
+    
+    
+    // ==================== PROBLEM TRACKER LOGIC ====================
+    
     #toggleAttempt(problemId, attemptIndex) {
-        const problem = this.#store.getById(problemId);
+        const session = this.#sessionsStore.getById(this.#currentSessionId);
+        if (!session) return;
+        
+        const problem = session.problems.find(p => p.id === problemId);
         if (!problem) return;
 
         // Check if attempt is already checked - prevent unchecking
@@ -412,10 +573,10 @@ export class BankanApp {
             return;
         }
 
-        this.#store.updateAttempt(problemId, attemptIndex, { checked: true });
+        this.#sessionsStore.updateAttempt(this.#currentSessionId, problemId, attemptIndex, { checked: true });
 
         this.#currentReview = { problemId, attemptIndex };
-        this.#render();
+        this.#renderProblems();
 
         // Focus after render
         setTimeout(() => {
@@ -427,36 +588,35 @@ export class BankanApp {
     }
 
     #saveReview(problemId, attemptIndex, review) {
-        this.#store.updateAttempt(problemId, attemptIndex, { review });
+        this.#sessionsStore.updateAttempt(this.#currentSessionId, problemId, attemptIndex, { review });
         this.#currentReview = { problemId: null, attemptIndex: null };
-        this.#render();
-    }
-
-    #clearSession() {
-        if (confirm('Clear all problems?')) {
-            this.#store.clear();
-            this.#render();
-            if (!this.#elements.problemForm.hasAttribute('open')) {
-                this.#elements.problemForm.setAttribute('open', '');
-            }
-        }
+        this.#renderProblems();
     }
 
     #updateFormState() {
-        if (this.#store.length > 0 && this.#elements.problemForm.hasAttribute('open')) {
-            this.#elements.problemForm.removeAttribute('open');
+        const problemForm = document.getElementById('problemForm');
+        const session = this.#sessionsStore.getById(this.#currentSessionId);
+        
+        if (problemForm && session && session.problems.length > 0 && problemForm.hasAttribute('open')) {
+            problemForm.removeAttribute('open');
         }
     }
 
-    #render() {
-        const problems = this.#store.getAll();
+    #renderProblems() {
+        const problemsList = document.getElementById('problemsList');
+        if (!problemsList) return;
+        
+        const session = this.#sessionsStore.getById(this.#currentSessionId);
+        if (!session) return;
+        
+        const problems = session.problems;
 
         if (problems.length === 0) {
-            this.#elements.problemsList.innerHTML = '<div class="empty-state">No problems yet. Add one above! 🧗</div>';
+            problemsList.innerHTML = '<div class="empty-state">No problems yet. Add one above! 🧗</div>';
             return;
         }
 
-        this.#elements.problemsList.innerHTML = problems.map(problem => `
+        problemsList.innerHTML = problems.map(problem => `
             <div class="problem-card" data-problem-id="${problem.id}">
                 <div class="problem-header">
                     <div class="color-indicator" style="background: ${problem.holdColor}; ${problem.holdColor === '#FFFFFF' ? 'border: 1px solid #E5E5EA;' : ''}"></div>

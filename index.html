@@ -13,46 +13,7 @@
     <title>Bankan</title>
 </head>
 <body>
-    <header>
-        <details class="problem-form" id="problemForm" open>
-            <summary>Add problem</summary>
-            
-            <div class="form-content">
-                <div class="form-group">
-                    <label>Hold color</label>
-                    <div class="color-palette" id="holdColorPalette"></div>
-                </div>
-
-                <div class="form-group">
-                    <label>Grade color</label>
-                    <div class="color-palette" id="gradeColorPalette"></div>
-                </div>
-
-                <button class="btn-primary" id="addProblemBtn">Add Problem</button>
-            </div>
-        </details>
-    </header>
-
-    <main>
-        <section class="problems-list" id="problemsList">
-            <!-- Problems will be added here dynamically -->
-        </section>
-    </main>
-
-    <footer>
-        <div class="timer-section">
-            <div class="timer-display" id="timerDisplay">--:--</div>
-            <div class="timer-controls" id="timerControls">
-                <button class="timer-btn" data-minutes="1">1m</button>
-                <button class="timer-btn" data-minutes="2">2m</button>
-                <button class="timer-btn" data-minutes="3">3m</button>
-                <button class="timer-btn" data-minutes="4">4m</button>
-                <button class="timer-btn" data-minutes="5">5m</button>
-            </div>
-        </div>
-        <button class="btn-danger" id="clearSessionBtn">Clear Session</button>
-    </footer>
-
+    <div id="app"></div>
     <script type="module" src="app.js"></script>
 </body>
 </html>
