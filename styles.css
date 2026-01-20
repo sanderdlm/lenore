@@ -11,8 +11,7 @@
 }
 
 html, body {
-    height: 100vh; /* Fallback */
-    height: 100dvh; /* Modern iOS fix */
+    height: 100%;
     overflow: hidden;
 }
 
@@ -21,9 +20,9 @@ body {
     background: #F8F9FA;
     display: flex;
     flex-direction: column;
-    padding-top: env(safe-area-inset-top);
-    padding-left: env(safe-area-inset-left);
-    padding-right: env(safe-area-inset-right);
+    padding-top: env(safe-area-inset-top, 0);
+    padding-left: env(safe-area-inset-left, 0);
+    padding-right: env(safe-area-inset-right, 0);
 }
 
 /* Layout */
@@ -43,8 +42,8 @@ main {
 
 footer {
     flex-shrink: 0;
-    padding: 8px 16px 16px;
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
+    padding: 8px 16px;
+    padding-bottom: env(safe-area-inset-bottom);
     background: #F8F9FA;
     z-index: 10;
 }
@@ -204,29 +203,6 @@ button {
     padding: 16px;
     border-radius: 12px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.08);
-    position: relative;
-    transition: transform 0.2s, opacity 0.2s;
-}
-
-.problem-card.swiping {
-    opacity: 0.7;
-}
-
-.delete-hint {
-    position: absolute;
-    top: 50%;
-    right: 16px;
-    transform: translateY(-50%);
-    color: #E57373;
-    font-weight: 600;
-    font-size: 14px;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-}
-
-.problem-card.swiping .delete-hint {
-    opacity: 1;
 }
 
 .problem-header {

@@ -185,6 +185,11 @@ class ProblemStore {
         return false;
     }
 
+    deleteById(id) {
+        this.#problems = this.#problems.filter(p => p.id !== id);
+        this.#save();
+    }
+
     clear() {
         this.#problems = [];
         this.#save();
@@ -258,7 +263,6 @@ export class BankanApp {
     #gradePalette;
     #elements;
     #currentReview = { problemId: null, attemptIndex: null };
-    #touchState = { startX: 0, startY: 0, problemId: null };
 
     constructor() {
         this.#elements = {
@@ -360,11 +364,6 @@ export class BankanApp {
             }
         });
 
-        // Swipe to delete
-        this.#elements.problemsList.addEventListener('touchstart', (e) => this.#handleTouchStart(e));
-        this.#elements.problemsList.addEventListener('touchmove', (e) => this.#handleTouchMove(e));
-        this.#elements.problemsList.addEventListener('touchend', (e) => this.#handleTouchEnd(e));
-
         // Review input events (delegated)
         this.#elements.problemsList.addEventListener('blur', (e) => {
             if (e.target.classList.contains('review-input')) {
@@ -443,63 +442,6 @@ export class BankanApp {
         }
     }
 
-    #handleTouchStart(e) {
-        const card = e.target.closest('.problem-card');
-        if (!card || e.target.closest('.attempt-btn')) return;
-
-        const touch = e.touches[0];
-        this.#touchState = {
-            startX: touch.clientX,
-            startY: touch.clientY,
-            problemId: parseInt(card.dataset.problemId, 10)
-        };
-    }
-
-    #handleTouchMove(e) {
-        if (!this.#touchState.startX || e.target.closest('.attempt-btn')) return;
-
-        const card = e.target.closest('.problem-card');
-        if (!card) return;
-
-        const touch = e.touches[0];
-        const deltaX = touch.clientX - this.#touchState.startX;
-        const deltaY = touch.clientY - this.#touchState.startY;
-
-        // Only respond to horizontal swipes
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 30) {
-            card.classList.add('swiping');
-            card.style.transform = `translateX(${deltaX}px)`;
-        }
-    }
-
-    #handleTouchEnd(e) {
-        if (!this.#touchState.startX) return;
-
-        const card = document.querySelector(`.problem-card[data-problem-id="${this.#touchState.problemId}"]`);
-        if (!card) {
-            this.#touchState = { startX: 0, startY: 0, problemId: null };
-            return;
-        }
-
-        const touch = e.changedTouches[0];
-        const deltaX = touch.clientX - this.#touchState.startX;
-        const deltaY = touch.clientY - this.#touchState.startY;
-
-        // Check if it's a swipe (more than 100px horizontal)
-        if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 100) {
-            // Delete the problem
-            this.#store.deleteById(this.#touchState.problemId);
-            this.#render();
-            this.#updateFormState();
-        } else {
-            // Reset the card
-            card.classList.remove('swiping');
-            card.style.transform = '';
-        }
-
-        this.#touchState = { startX: 0, startY: 0, problemId: null };
-    }
-
     #updateFormState() {
         if (this.#store.length > 0 && this.#elements.problemForm.hasAttribute('open')) {
             this.#elements.problemForm.removeAttribute('open');
@@ -516,7 +458,6 @@ export class BankanApp {
 
         this.#elements.problemsList.innerHTML = problems.map(problem => `
             <div class="problem-card" data-problem-id="${problem.id}">
-                <div class="delete-hint">Swipe to delete →</div>
                 <div class="problem-header">
                     <div class="color-indicator" style="background: ${problem.holdColor}; ${problem.holdColor === '#FFFFFF' ? 'border: 1px solid #E5E5EA;' : ''}"></div>
                     <div class="color-divider"></div>
@@ -524,14 +465,20 @@ export class BankanApp {
                 </div>
 
                 <div class="attempts-grid">
-                    ${problem.attempts.map((attempt, index) => `
+                    ${problem.attempts.map((attempt, index) => {
+                        const lastCheckedIndex = problem.attempts.findLastIndex(a => a.checked);
+                        const isNextAttempt = index === lastCheckedIndex + 1;
+                        const isDisabled = attempt.checked || !isNextAttempt;
+                        
+                        return `
                         <button 
-                            class="attempt-btn ${attempt.checked ? 'checked' : ''}"
+                            class="attempt-btn ${attempt.checked ? 'checked' : ''} ${isDisabled ? 'disabled' : ''}"
                             data-attempt-index="${index}"
+                            ${isDisabled ? 'disabled' : ''}
                         >
                             ${attempt.checked ? '✓' : index + 1}
                         </button>
-                    `).join('')}
+                    `}).join('')}
                 </div>
 
                 ${problem.attempts.map((attempt, index) => {
