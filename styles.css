@@ -194,6 +194,8 @@ body {
 .problem-form-inline summary {
     list-style: none;
     user-select: none;
+    outline: none;
+    cursor: unset;
 }
 
 .problem-form-inline summary::-webkit-details-marker {
@@ -204,7 +206,7 @@ body {
     position: absolute;
     left: var(--spacing-lg);
     right: var(--spacing-lg);
-    top: 32px;
+    top: calc(var(--spacing-lg) * 2);
     z-index: 100;
 }
 
@@ -263,7 +265,6 @@ footer {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
     gap: var(--spacing-sm);
-    margin-bottom: var(--spacing-sm);
 }
 
 .timer-btn {
@@ -412,7 +413,6 @@ button {
 .review-input:focus {
     outline: none;
     border-color: var(--color-focus);
-    box-shadow: 0 0 0 3px rgba(0,122,255,0.1);
 }
 
 .review-input.show {
