@@ -239,9 +239,6 @@ footer {
 }
 
 /* Timer */
-.timer-section {
-    margin-bottom: var(--spacing-sm);
-}
 
 .timer-display {
     text-align: center;
