@@ -444,7 +444,9 @@
             updateFormState();
         }
 
-        function toggleAttempt(problemId, attemptIndex) {
+        function toggleAttempt(event, problemId, attemptIndex) {
+            event.preventDefault();
+            
             const problem = problems.find(p => p.id === problemId);
             if (!problem) return;
 
@@ -455,15 +457,6 @@
             currentReviewAttempt = attemptIndex;
             
             renderProblems();
-            
-            // Focus the input after render completes
-            requestAnimationFrame(() => {
-                const reviewInput = document.getElementById(`review-${problemId}-${attemptIndex}`);
-                if (reviewInput) {
-                    reviewInput.focus();
-                    reviewInput.click();
-                }
-            });
         }
 
         function saveReview(problemId, attemptIndex) {
@@ -500,7 +493,7 @@
                         ${problem.attempts.map((attempt, index) => `
                             <button 
                                 class="attempt-btn ${attempt.checked ? 'checked' : ''}"
-                                onclick="toggleAttempt(${problem.id}, ${index})"
+                                onclick="toggleAttempt(event, ${problem.id}, ${index})"
                             >
                                 ${attempt.checked ? '✓' : index + 1}
                             </button>
@@ -517,6 +510,7 @@
                                 class="review-input show" 
                                 id="review-${problem.id}-${index}"
                                 placeholder="Add review for attempt ${index + 1}..."
+                                autofocus
                                 onblur="saveReview(${problem.id}, ${index})"
                                 onkeypress="if(event.key === 'Enter') { saveReview(${problem.id}, ${index}); }"
                             />`;
