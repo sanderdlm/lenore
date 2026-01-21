@@ -2,15 +2,18 @@
   "name": "Bankan - Boulder Tracker",
   "short_name": "Bankan",
   "description": "Track your bouldering attempts and progress",
-  "start_url": "/",
+  "start_url": "https://sanderdlm.github.io/lenore/",
   "display": "standalone",
   "background_color": "#F8F9FA",
   "theme_color": "#2C2C2E",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%23FF6B6B' width='512' height='512' rx='100'/><text x='256' y='380' font-size='300' text-anchor='middle' fill='white' font-family='Arial'>🧗</text></svg>",
+      "src": "icon.svg",
       "sizes": "512x512",
       "type": "image/svg+xml"
     }
-  ]
+  ],
+  "dir": "auto",
+  "lang": "en",
+  "orientation": "any"
 }
