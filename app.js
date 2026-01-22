@@ -415,27 +415,26 @@ export class BankanApp {
         this.#longPressTarget = null;
     }
     
+    #vibrate(duration = 50) {
+        if ('vibrate' in navigator) {
+            navigator.vibrate(duration);
+        }
+    }
+    
     #handleLongPress() {
         if (!this.#longPressTarget) return;
         
         const { element, type } = this.#longPressTarget;
         
+        // Vibrate on successful long-press
+        this.#vibrate(50);
+        
         if (type === 'attempt') {
-            // Vibrate on long-press
-            if ('vibrate' in navigator) {
-                navigator.vibrate(50);
-            }
-            
             const card = element.closest('.problem-card');
             const problemId = parseInt(card.dataset.problemId, 10);
             const attemptIndex = parseInt(element.dataset.attemptIndex, 10);
             this.#toggleAttempt(problemId, attemptIndex);
         } else if (type === 'review') {
-            // Vibrate on long-press
-            if ('vibrate' in navigator) {
-                navigator.vibrate(50);
-            }
-            
             const problemId = parseInt(element.dataset.problemId, 10);
             const attemptIndex = parseInt(element.dataset.attemptIndex, 10);
             this.#editReview(problemId, attemptIndex);
