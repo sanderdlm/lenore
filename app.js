@@ -6,6 +6,7 @@
 // Constants
 const DOUBLE_TAP_THRESHOLD_MS = 300;
 const LONG_PRESS_THRESHOLD_MS = 500;
+const VIBRATION_DURATION_MS = 50;
 const SW_UPDATE_INTERVAL_MS = 60000;
 const TIMER_TICK_MS = 100;
 const STORAGE_KEY = 'bankan_sessions';
@@ -415,7 +416,7 @@ export class BankanApp {
         this.#longPressTarget = null;
     }
     
-    #vibrate(duration = 50) {
+    #vibrate(duration = VIBRATION_DURATION_MS) {
         if ('vibrate' in navigator) {
             navigator.vibrate(duration);
         }
@@ -427,7 +428,7 @@ export class BankanApp {
         const { element, type } = this.#longPressTarget;
         
         // Vibrate on successful long-press
-        this.#vibrate(50);
+        this.#vibrate();
         
         if (type === 'attempt') {
             const card = element.closest('.problem-card');
