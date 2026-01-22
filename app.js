@@ -315,9 +315,7 @@ export class BankanApp {
         this.#sessionsStore = new SessionsStore();
 
         this.#timer = new Timer(document.createElement('div'), () => {
-            if ('vibrate' in navigator) {
-                navigator.vibrate([200, 100, 200]);
-            }
+            this.#vibrate([200, 100, 200]);
         });
 
         this.#bindGlobalEvents();
@@ -597,9 +595,7 @@ export class BankanApp {
         // Re-initialize timer display
         const timerDisplay = document.getElementById('timerDisplay');
         this.#timer = new Timer(timerDisplay, () => {
-            if ('vibrate' in navigator) {
-                navigator.vibrate([200, 100, 200]);
-            }
+            this.#vibrate([200, 100, 200]);
         });
         
         // Initialize color palettes
