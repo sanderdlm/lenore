@@ -450,14 +450,6 @@ export class BankanApp {
             }
         }, true);
         
-        app.addEventListener('keypress', (e) => {
-            if (e.target.classList.contains('review-input') && e.key === 'Enter') {
-                const problemId = parseInt(e.target.dataset.problemId, 10);
-                const attemptIndex = parseInt(e.target.dataset.attemptIndex, 10);
-                this.#saveReview(problemId, attemptIndex, e.target.value);
-            }
-        });
-        
         // Cleanup on page unload
         window.addEventListener('beforeunload', () => {
             this.#timer.destroy();
@@ -692,15 +684,19 @@ export class BankanApp {
                 ${problem.attempts.map((attempt, index) => {
                     // Check if we're currently editing this review
                     if (this.#currentReview.problemId === problem.id && this.#currentReview.attemptIndex === index) {
-                        return `<input 
-                            type="text" 
+                        return `
+                        <div class="review-tips">
+                            <div class="review-tip">💡 Say something true & helpful about your attempt</div>
+                            <div class="review-tip">🤔 Explain why you fell—avoid "I can't" or "it's too hard"</div>
+                        </div>
+                        <textarea 
                             class="review-input show" 
                             id="review-${problem.id}-${index}"
                             data-problem-id="${problem.id}"
                             data-attempt-index="${index}"
-                            placeholder="Add review for attempt ${index + 1}..."
-                            value="${escapeHtml(attempt.review || '')}"
-                        />`;
+                            placeholder="..."
+                            rows="3"
+                        >${escapeHtml(attempt.review || '')}</textarea>`;
                     }
                     // Show existing review as clickable text
                     if (attempt.review) {

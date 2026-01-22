@@ -401,14 +401,33 @@ button {
 }
 
 /* Review */
+.review-tips {
+    margin-top: var(--spacing-md);
+    padding: var(--spacing-md);
+    background: #FFF9E6;
+    border: 2px solid #FFD93D;
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.review-tip {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+    line-height: 1.4;
+}
+
 .review-input {
     width: 100%;
-    padding: 10px var(--spacing-md);
+    padding: 12px var(--spacing-md);
     border: 2px solid var(--color-border);
     border-radius: var(--radius);
     font-size: var(--font-size-base);
     margin-top: var(--spacing-sm);
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    resize: vertical;
+    min-height: 80px;
 }
 
 .review-input:focus {
