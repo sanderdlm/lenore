@@ -410,6 +410,15 @@ export class BankanApp {
                 this.#toggleAttempt(problemId, attemptIndex);
                 return;
             }
+            
+            // Review text click (edit mode)
+            const reviewText = e.target.closest('.review-text');
+            if (reviewText) {
+                const problemId = parseInt(reviewText.dataset.problemId, 10);
+                const attemptIndex = parseInt(reviewText.dataset.attemptIndex, 10);
+                this.#editReview(problemId, attemptIndex);
+                return;
+            }
         };
         
         const handleTouch = (e) => {
@@ -422,7 +431,8 @@ export class BankanApp {
                 target.closest('#addProblemBtn') ||
                 target.closest('.timer-btn') ||
                 target.closest('#timerDisplay') ||
-                target.closest('.attempt-btn')) {
+                target.closest('.attempt-btn') ||
+                target.closest('.review-text')) {
                 e.preventDefault();
                 handleClick(e);
             }
@@ -580,8 +590,12 @@ export class BankanApp {
         const problem = session.problems.find(p => p.id === problemId);
         if (!problem) return;
 
-        // Check if attempt is already checked - prevent unchecking
-        if (problem.attempts[attemptIndex].checked) {
+        const attempt = problem.attempts[attemptIndex];
+        
+        // If already checked, uncheck it and clear the review
+        if (attempt.checked) {
+            this.#sessionsStore.updateAttempt(this.#currentSessionId, problemId, attemptIndex, { checked: false, review: '' });
+            this.#renderProblems();
             return;
         }
 
@@ -596,20 +610,33 @@ export class BankanApp {
 
         this.#currentReview = { problemId, attemptIndex };
         this.#renderProblems();
-
-        // Focus after render
-        setTimeout(() => {
-            const input = document.getElementById(`review-${problemId}-${attemptIndex}`);
-            if (input) {
-                input.focus();
-            }
-        }, 100);
+        this.#focusReviewInput(problemId, attemptIndex);
     }
 
     #saveReview(problemId, attemptIndex, review) {
         this.#sessionsStore.updateAttempt(this.#currentSessionId, problemId, attemptIndex, { review });
         this.#currentReview = { problemId: null, attemptIndex: null };
         this.#renderProblems();
+    }
+
+    #focusReviewInput(problemId, attemptIndex, moveToEnd = false) {
+        // Small delay to allow DOM to update after render
+        setTimeout(() => {
+            const input = document.getElementById(`review-${problemId}-${attemptIndex}`);
+            if (input) {
+                input.focus();
+                if (moveToEnd) {
+                    // Move cursor to end of text for editing
+                    input.setSelectionRange(input.value.length, input.value.length);
+                }
+            }
+        }, 100);
+    }
+
+    #editReview(problemId, attemptIndex) {
+        this.#currentReview = { problemId, attemptIndex };
+        this.#renderProblems();
+        this.#focusReviewInput(problemId, attemptIndex, true);
     }
 
     #updateFormState() {
@@ -647,7 +674,8 @@ export class BankanApp {
                     ${problem.attempts.map((attempt, index) => {
                         const lastCheckedIndex = problem.attempts.findLastIndex(a => a.checked);
                         const isNextAttempt = index === lastCheckedIndex + 1;
-                        const isDisabled = attempt.checked || !isNextAttempt;
+                        // Disable only unchecked attempts that are not next in chronological order
+                        const isDisabled = !attempt.checked && !isNextAttempt;
                         
                         return `
                         <button 
@@ -661,9 +689,7 @@ export class BankanApp {
                 </div>
 
                 ${problem.attempts.map((attempt, index) => {
-                    if (attempt.review) {
-                        return `<div class="review-text"><strong>Attempt ${index + 1}:</strong> ${escapeHtml(attempt.review)}</div>`;
-                    }
+                    // Check if we're currently editing this review
                     if (this.#currentReview.problemId === problem.id && this.#currentReview.attemptIndex === index) {
                         return `
                             <div class="review-tips">
@@ -678,7 +704,12 @@ export class BankanApp {
                                 data-problem-id="${problem.id}"
                                 data-attempt-index="${index}"
                                 placeholder="..."
+                                value="${escapeHtml(attempt.review || '')}"
                             />`;
+                    }
+                    // Show existing review as clickable text
+                    if (attempt.review) {
+                        return `<div class="review-text" data-problem-id="${problem.id}" data-attempt-index="${index}"><strong>Attempt ${index + 1}:</strong> ${escapeHtml(attempt.review)}</div>`;
                     }
                     return '';
                 }).join('')}
