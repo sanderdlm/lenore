@@ -582,9 +582,9 @@ export class BankanApp {
 
         const attempt = problem.attempts[attemptIndex];
         
-        // If already checked, uncheck it
+        // If already checked, uncheck it and clear the review
         if (attempt.checked) {
-            this.#sessionsStore.updateAttempt(this.#currentSessionId, problemId, attemptIndex, { checked: false });
+            this.#sessionsStore.updateAttempt(this.#currentSessionId, problemId, attemptIndex, { checked: false, review: '' });
             this.#renderProblems();
             return;
         }
@@ -651,7 +651,7 @@ export class BankanApp {
                     ${problem.attempts.map((attempt, index) => {
                         const lastCheckedIndex = problem.attempts.findLastIndex(a => a.checked);
                         const isNextAttempt = index === lastCheckedIndex + 1;
-                        // Allow clicking checked attempts to uncheck them, or clicking the next attempt in sequence
+                        // Disable only unchecked attempts that are not next in chronological order
                         const isDisabled = !attempt.checked && !isNextAttempt;
                         
                         return `
