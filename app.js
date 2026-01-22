@@ -665,14 +665,20 @@ export class BankanApp {
                         return `<div class="review-text"><strong>Attempt ${index + 1}:</strong> ${escapeHtml(attempt.review)}</div>`;
                     }
                     if (this.#currentReview.problemId === problem.id && this.#currentReview.attemptIndex === index) {
-                        return `<input 
-                            type="text" 
-                            class="review-input show" 
-                            id="review-${problem.id}-${index}"
-                            data-problem-id="${problem.id}"
-                            data-attempt-index="${index}"
-                            placeholder="Add review for attempt ${index + 1}..."
-                        />`;
+                        return `
+                            <div class="review-tips">
+                                💡 <strong>Tip:</strong> Say something true & helpful about your attempt
+                                <br>
+                                💬 <strong>Tip:</strong> Explain why you fell without "I can't" or "it's too hard"
+                            </div>
+                            <input 
+                                type="text" 
+                                class="review-input show" 
+                                id="review-${problem.id}-${index}"
+                                data-problem-id="${problem.id}"
+                                data-attempt-index="${index}"
+                                placeholder="..."
+                            />`;
                     }
                     return '';
                 }).join('')}

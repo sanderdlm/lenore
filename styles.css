@@ -431,6 +431,17 @@ button {
     line-height: 1.4;
 }
 
+.review-tips {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    margin-top: var(--spacing-sm);
+    padding: 10px var(--spacing-md);
+    background: #FFF9E6;
+    border: 2px solid #FFD93D;
+    border-radius: var(--radius);
+    line-height: 1.6;
+}
+
 /* Empty State */
 .empty-state {
     text-align: center;
