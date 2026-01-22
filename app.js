@@ -301,6 +301,7 @@ export class BankanApp {
     #currentScreen = 'sessions'; // 'sessions' or 'tracker'
     #longPressTimer = null;
     #longPressTarget = null;
+    #isScrolling = false;
 
     constructor() {
         this.#elements = {
@@ -327,12 +328,11 @@ export class BankanApp {
         const app = this.#elements.app;
         
         let touchStartY = 0;
-        let isScrolling = false;
         
         // Track touch start for scroll detection and long-press
         app.addEventListener('touchstart', (e) => {
             touchStartY = e.touches[0].clientY;
-            isScrolling = false;
+            this.#isScrolling = false;
             
             // Check if touching an attempt button or review text (long-press targets)
             const attemptBtn = e.target.closest('.attempt-btn');
@@ -349,7 +349,7 @@ export class BankanApp {
         app.addEventListener('touchmove', (e) => {
             const touchY = e.touches[0].clientY;
             if (Math.abs(touchY - touchStartY) > 10) {
-                isScrolling = true;
+                this.#isScrolling = true;
                 this.#cancelLongPress();
             }
         }, { passive: true });
@@ -466,7 +466,7 @@ export class BankanApp {
         
         // Session card click (open session)
         const sessionCard = e.target.closest('.session-card');
-        if (sessionCard && this.#currentScreen === 'sessions') {
+        if (sessionCard && this.#currentScreen === 'sessions' && !this.#isScrolling) {
             const sessionId = parseInt(sessionCard.dataset.sessionId, 10);
             this.#showProblemTracker(sessionId);
             return;
