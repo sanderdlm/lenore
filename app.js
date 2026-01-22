@@ -606,14 +606,7 @@ export class BankanApp {
 
         this.#currentReview = { problemId, attemptIndex };
         this.#renderProblems();
-
-        // Focus after render
-        setTimeout(() => {
-            const input = document.getElementById(`review-${problemId}-${attemptIndex}`);
-            if (input) {
-                input.focus();
-            }
-        }, 100);
+        this.#focusReviewInput(problemId, attemptIndex);
     }
 
     #saveReview(problemId, attemptIndex, review) {
@@ -622,19 +615,24 @@ export class BankanApp {
         this.#renderProblems();
     }
 
-    #editReview(problemId, attemptIndex) {
-        this.#currentReview = { problemId, attemptIndex };
-        this.#renderProblems();
-        
-        // Focus after render
+    #focusReviewInput(problemId, attemptIndex, moveToEnd = false) {
+        // Small delay to allow DOM to update after render
         setTimeout(() => {
             const input = document.getElementById(`review-${problemId}-${attemptIndex}`);
             if (input) {
                 input.focus();
-                // Move cursor to end of text
-                input.setSelectionRange(input.value.length, input.value.length);
+                if (moveToEnd) {
+                    // Move cursor to end of text for editing
+                    input.setSelectionRange(input.value.length, input.value.length);
+                }
             }
         }, 100);
+    }
+
+    #editReview(problemId, attemptIndex) {
+        this.#currentReview = { problemId, attemptIndex };
+        this.#renderProblems();
+        this.#focusReviewInput(problemId, attemptIndex, true);
     }
 
     #updateFormState() {
