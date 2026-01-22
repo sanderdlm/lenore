@@ -580,8 +580,12 @@ export class BankanApp {
         const problem = session.problems.find(p => p.id === problemId);
         if (!problem) return;
 
-        // Check if attempt is already checked - prevent unchecking
-        if (problem.attempts[attemptIndex].checked) {
+        const attempt = problem.attempts[attemptIndex];
+        
+        // If already checked, uncheck it
+        if (attempt.checked) {
+            this.#sessionsStore.updateAttempt(this.#currentSessionId, problemId, attemptIndex, { checked: false });
+            this.#renderProblems();
             return;
         }
 
@@ -647,7 +651,8 @@ export class BankanApp {
                     ${problem.attempts.map((attempt, index) => {
                         const lastCheckedIndex = problem.attempts.findLastIndex(a => a.checked);
                         const isNextAttempt = index === lastCheckedIndex + 1;
-                        const isDisabled = attempt.checked || !isNextAttempt;
+                        // Allow clicking checked attempts to uncheck them, or clicking the next attempt in sequence
+                        const isDisabled = !attempt.checked && !isNextAttempt;
                         
                         return `
                         <button 
