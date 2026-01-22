@@ -5,6 +5,8 @@
 
 // Constants
 const DOUBLE_TAP_THRESHOLD_MS = 300;
+const LONG_PRESS_THRESHOLD_MS = 500;
+const VIBRATION_DURATION_MS = 50;
 const SW_UPDATE_INTERVAL_MS = 60000;
 const TIMER_TICK_MS = 100;
 const STORAGE_KEY = 'bankan_sessions';
@@ -298,6 +300,9 @@ export class BankanApp {
     #elements;
     #currentReview = { problemId: null, attemptIndex: null };
     #currentScreen = 'sessions'; // 'sessions' or 'tracker'
+    #longPressTimer = null;
+    #longPressTarget = null;
+    #isScrolling = false;
 
     constructor() {
         this.#elements = {
@@ -310,9 +315,7 @@ export class BankanApp {
         this.#sessionsStore = new SessionsStore();
 
         this.#timer = new Timer(document.createElement('div'), () => {
-            if ('vibrate' in navigator) {
-                navigator.vibrate([200, 100, 200]);
-            }
+            this.#vibrate([200, 100, 200]);
         });
 
         this.#bindGlobalEvents();
@@ -324,122 +327,60 @@ export class BankanApp {
         const app = this.#elements.app;
         
         let touchStartY = 0;
-        let isScrolling = false;
         
-        // Track touch start for scroll detection
+        // Track touch start for scroll detection and long-press
         app.addEventListener('touchstart', (e) => {
             touchStartY = e.touches[0].clientY;
-            isScrolling = false;
+            this.#isScrolling = false;
+            
+            // Check if touching an attempt button or review text (long-press targets)
+            const attemptBtn = e.target.closest('.attempt-btn');
+            const reviewText = e.target.closest('.review-text');
+            
+            if (attemptBtn && !attemptBtn.disabled) {
+                this.#startLongPress(attemptBtn, 'attempt');
+            } else if (reviewText) {
+                this.#startLongPress(reviewText, 'review');
+            }
         }, { passive: true });
         
-        // Detect if user is scrolling
+        // Detect if user is scrolling (cancel long-press)
         app.addEventListener('touchmove', (e) => {
             const touchY = e.touches[0].clientY;
             if (Math.abs(touchY - touchStartY) > 10) {
-                isScrolling = true;
+                this.#isScrolling = true;
+                this.#cancelLongPress();
             }
         }, { passive: true });
         
-        // Single delegated event handler for all clicks
-        const handleClick = (e) => {
-            // New session button
-            if (e.target.closest('#newSessionBtn')) {
-                const session = this.#sessionsStore.create();
-                this.#showProblemTracker(session.id);
-                return;
-            }
+        // Handle touch end (finalize long-press or cancel)
+        app.addEventListener('touchend', (e) => {
+            this.#cancelLongPress();
             
-            // Delete session button
-            const deleteBtn = e.target.closest('.session-delete-btn');
-            if (deleteBtn) {
-                e.stopPropagation();
-                const sessionId = parseInt(deleteBtn.dataset.sessionId, 10);
-                if (confirm('Delete this session?')) {
-                    this.#sessionsStore.deleteById(sessionId);
-                    this.#showSessionsList();
-                }
-                return;
-            }
-            
-            // Session card click (open session)
-            const sessionCard = e.target.closest('.session-card');
-            if (sessionCard && this.#currentScreen === 'sessions' && !isScrolling) {
-                const sessionId = parseInt(sessionCard.dataset.sessionId, 10);
-                this.#showProblemTracker(sessionId);
-                return;
-            }
-            
-            // Back button
-            if (e.target.closest('#backBtn')) {
-                this.#showSessionsList();
-                return;
-            }
-            
-            // Add problem button
-            if (e.target.closest('#addProblemBtn')) {
-                this.#sessionsStore.addProblem(
-                    this.#currentSessionId,
-                    this.#holdPalette.getSelectedColor(),
-                    this.#gradePalette.getSelectedColor()
-                );
-                this.#renderProblems();
-                this.#updateFormState();
-                return;
-            }
-            
-            // Timer controls
-            const timerBtn = e.target.closest('.timer-btn');
-            if (timerBtn) {
-                const minutes = parseInt(timerBtn.dataset.minutes, 10);
-                this.#timer.start(minutes);
-                return;
-            }
-            
-            // Timer display (double-tap to clear)
-            if (e.target.closest('#timerDisplay')) {
-                this.#timer.handleTap();
-                return;
-            }
-            
-            // Attempt button
-            const attemptBtn = e.target.closest('.attempt-btn');
-            if (attemptBtn) {
-                const card = attemptBtn.closest('.problem-card');
-                const problemId = parseInt(card.dataset.problemId, 10);
-                const attemptIndex = parseInt(attemptBtn.dataset.attemptIndex, 10);
-                this.#toggleAttempt(problemId, attemptIndex);
-                return;
-            }
-            
-            // Review text click (edit mode)
-            const reviewText = e.target.closest('.review-text');
-            if (reviewText) {
-                const problemId = parseInt(reviewText.dataset.problemId, 10);
-                const attemptIndex = parseInt(reviewText.dataset.attemptIndex, 10);
-                this.#editReview(problemId, attemptIndex);
-                return;
-            }
-        };
-        
-        const handleTouch = (e) => {
             const target = e.target;
             
+            // Handle non-long-press touch interactions
             if (target.closest('#newSessionBtn') || 
                 target.closest('.session-delete-btn') ||
                 target.closest('.session-card') ||
                 target.closest('#backBtn') ||
                 target.closest('#addProblemBtn') ||
                 target.closest('.timer-btn') ||
-                target.closest('#timerDisplay') ||
-                target.closest('.attempt-btn') ||
-                target.closest('.review-text')) {
+                target.closest('#timerDisplay')) {
                 e.preventDefault();
-                handleClick(e);
+                this.#handleClick(e);
             }
-        };
+        }, { passive: false });
         
-        app.addEventListener('click', handleClick);
-        app.addEventListener('touchend', handleTouch);
+        // Single delegated event handler for all clicks
+        app.addEventListener('click', (e) => {
+            this.#handleClick(e);
+        });
+        
+        // Handle touch cancel (e.g., incoming call)
+        app.addEventListener('touchcancel', () => {
+            this.#cancelLongPress();
+        }, { passive: true });
         
         // Review input events
         app.addEventListener('blur', (e) => {
@@ -454,6 +395,114 @@ export class BankanApp {
         window.addEventListener('beforeunload', () => {
             this.#timer.destroy();
         });
+    }
+    
+    #startLongPress(element, type) {
+        this.#cancelLongPress(); // Cancel any existing long-press
+        
+        this.#longPressTarget = { element, type };
+        this.#longPressTimer = setTimeout(() => {
+            this.#handleLongPress();
+        }, LONG_PRESS_THRESHOLD_MS);
+    }
+    
+    #cancelLongPress() {
+        if (this.#longPressTimer) {
+            clearTimeout(this.#longPressTimer);
+            this.#longPressTimer = null;
+        }
+        this.#longPressTarget = null;
+    }
+    
+    #vibrate(duration = VIBRATION_DURATION_MS) {
+        if ('vibrate' in navigator) {
+            navigator.vibrate(duration);
+        }
+    }
+    
+    #handleLongPress() {
+        if (!this.#longPressTarget) return;
+        
+        const { element, type } = this.#longPressTarget;
+        
+        // Vibrate on successful long-press
+        this.#vibrate();
+        
+        if (type === 'attempt') {
+            const card = element.closest('.problem-card');
+            const problemId = parseInt(card.dataset.problemId, 10);
+            const attemptIndex = parseInt(element.dataset.attemptIndex, 10);
+            this.#toggleAttempt(problemId, attemptIndex);
+        } else if (type === 'review') {
+            const problemId = parseInt(element.dataset.problemId, 10);
+            const attemptIndex = parseInt(element.dataset.attemptIndex, 10);
+            this.#editReview(problemId, attemptIndex);
+        }
+        
+        this.#cancelLongPress();
+    }
+    
+    #handleClick(e) {
+        // New session button
+        if (e.target.closest('#newSessionBtn')) {
+            const session = this.#sessionsStore.create();
+            this.#showProblemTracker(session.id);
+            return;
+        }
+        
+        // Delete session button
+        const deleteBtn = e.target.closest('.session-delete-btn');
+        if (deleteBtn) {
+            e.stopPropagation();
+            const sessionId = parseInt(deleteBtn.dataset.sessionId, 10);
+            if (confirm('Delete this session?')) {
+                this.#sessionsStore.deleteById(sessionId);
+                this.#showSessionsList();
+            }
+            return;
+        }
+        
+        // Session card click (open session)
+        const sessionCard = e.target.closest('.session-card');
+        if (sessionCard && this.#currentScreen === 'sessions' && !this.#isScrolling) {
+            const sessionId = parseInt(sessionCard.dataset.sessionId, 10);
+            this.#showProblemTracker(sessionId);
+            return;
+        }
+        
+        // Back button
+        if (e.target.closest('#backBtn')) {
+            this.#showSessionsList();
+            return;
+        }
+        
+        // Add problem button
+        if (e.target.closest('#addProblemBtn')) {
+            this.#sessionsStore.addProblem(
+                this.#currentSessionId,
+                this.#holdPalette.getSelectedColor(),
+                this.#gradePalette.getSelectedColor()
+            );
+            this.#renderProblems();
+            this.#updateFormState();
+            return;
+        }
+        
+        // Timer controls
+        const timerBtn = e.target.closest('.timer-btn');
+        if (timerBtn) {
+            const minutes = parseInt(timerBtn.dataset.minutes, 10);
+            this.#timer.start(minutes);
+            return;
+        }
+        
+        // Timer display (double-tap to clear)
+        if (e.target.closest('#timerDisplay')) {
+            this.#timer.handleTap();
+            return;
+        }
+        
+        // Note: Attempt buttons and review text are now handled via long-press only
     }
 
     // ==================== SCREEN NAVIGATION ====================
@@ -546,9 +595,7 @@ export class BankanApp {
         // Re-initialize timer display
         const timerDisplay = document.getElementById('timerDisplay');
         this.#timer = new Timer(timerDisplay, () => {
-            if ('vibrate' in navigator) {
-                navigator.vibrate([200, 100, 200]);
-            }
+            this.#vibrate([200, 100, 200]);
         });
         
         // Initialize color palettes
