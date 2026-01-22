@@ -595,6 +595,7 @@ export class BankanApp {
         // If already checked, uncheck it and clear the review
         if (attempt.checked) {
             this.#sessionsStore.updateAttempt(this.#currentSessionId, problemId, attemptIndex, { checked: false, review: '' });
+            this.#currentReview = { problemId: null, attemptIndex: null };
             this.#renderProblems();
             return;
         }
