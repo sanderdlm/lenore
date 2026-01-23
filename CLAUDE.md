@@ -10,4 +10,4 @@ All UI/UX decisions should prioritize mobile interaction patterns:
 - Single-column, vertical scrolling design
 - No desktop-specific features needed
 
-Target viewport: iPhone screen sizes
+Target viewport: iPhone 13 mini (this is a personal app for me)
