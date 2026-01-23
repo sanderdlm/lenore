@@ -5,7 +5,6 @@
 
 // Constants
 const DOUBLE_TAP_THRESHOLD_MS = 300;
-const LONG_PRESS_THRESHOLD_MS = 500;
 const VIBRATION_DURATION_MS = 50;
 const SW_UPDATE_INTERVAL_MS = 60000;
 const TIMER_TICK_MS = 100;
@@ -300,8 +299,6 @@ export class BankanApp {
     #elements;
     #currentReview = { problemId: null, attemptIndex: null };
     #currentScreen = 'sessions'; // 'sessions' or 'tracker'
-    #longPressTimer = null;
-    #longPressTarget = null;
     #isScrolling = false;
 
     constructor() {
@@ -328,45 +325,34 @@ export class BankanApp {
         
         let touchStartY = 0;
         
-        // Track touch start for scroll detection and long-press
+        // Track touch start for scroll detection
         app.addEventListener('touchstart', (e) => {
             touchStartY = e.touches[0].clientY;
             this.#isScrolling = false;
-            
-            // Check if touching an attempt button or review text (long-press targets)
-            const attemptBtn = e.target.closest('.attempt-btn');
-            const reviewText = e.target.closest('.review-text');
-            
-            if (attemptBtn && !attemptBtn.disabled) {
-                this.#startLongPress(attemptBtn, 'attempt');
-            } else if (reviewText) {
-                this.#startLongPress(reviewText, 'review');
-            }
         }, { passive: true });
         
-        // Detect if user is scrolling (cancel long-press)
+        // Detect if user is scrolling
         app.addEventListener('touchmove', (e) => {
             const touchY = e.touches[0].clientY;
             if (Math.abs(touchY - touchStartY) > 10) {
                 this.#isScrolling = true;
-                this.#cancelLongPress();
             }
         }, { passive: true });
         
-        // Handle touch end (finalize long-press or cancel)
+        // Handle touch end
         app.addEventListener('touchend', (e) => {
-            this.#cancelLongPress();
-            
             const target = e.target;
             
-            // Handle non-long-press touch interactions
+            // Handle touch interactions
             if (target.closest('#newSessionBtn') || 
                 target.closest('.session-delete-btn') ||
                 target.closest('.session-card') ||
                 target.closest('#backBtn') ||
                 target.closest('#addProblemBtn') ||
                 target.closest('.timer-btn') ||
-                target.closest('#timerDisplay')) {
+                target.closest('#timerDisplay') ||
+                target.closest('.attempt-btn') ||
+                target.closest('.review-text')) {
                 e.preventDefault();
                 this.#handleClick(e);
             }
@@ -376,11 +362,6 @@ export class BankanApp {
         app.addEventListener('click', (e) => {
             this.#handleClick(e);
         });
-        
-        // Handle touch cancel (e.g., incoming call)
-        app.addEventListener('touchcancel', () => {
-            this.#cancelLongPress();
-        }, { passive: true });
         
         // Review input events
         app.addEventListener('blur', (e) => {
@@ -397,49 +378,10 @@ export class BankanApp {
         });
     }
     
-    #startLongPress(element, type) {
-        this.#cancelLongPress(); // Cancel any existing long-press
-        
-        this.#longPressTarget = { element, type };
-        this.#longPressTimer = setTimeout(() => {
-            this.#handleLongPress();
-        }, LONG_PRESS_THRESHOLD_MS);
-    }
-    
-    #cancelLongPress() {
-        if (this.#longPressTimer) {
-            clearTimeout(this.#longPressTimer);
-            this.#longPressTimer = null;
-        }
-        this.#longPressTarget = null;
-    }
-    
     #vibrate(duration = VIBRATION_DURATION_MS) {
         if ('vibrate' in navigator) {
             navigator.vibrate(duration);
         }
-    }
-    
-    #handleLongPress() {
-        if (!this.#longPressTarget) return;
-        
-        const { element, type } = this.#longPressTarget;
-        
-        // Vibrate on successful long-press
-        this.#vibrate();
-        
-        if (type === 'attempt') {
-            const card = element.closest('.problem-card');
-            const problemId = parseInt(card.dataset.problemId, 10);
-            const attemptIndex = parseInt(element.dataset.attemptIndex, 10);
-            this.#toggleAttempt(problemId, attemptIndex);
-        } else if (type === 'review') {
-            const problemId = parseInt(element.dataset.problemId, 10);
-            const attemptIndex = parseInt(element.dataset.attemptIndex, 10);
-            this.#editReview(problemId, attemptIndex);
-        }
-        
-        this.#cancelLongPress();
     }
     
     #handleClick(e) {
@@ -502,7 +444,24 @@ export class BankanApp {
             return;
         }
         
-        // Note: Attempt buttons and review text are now handled via long-press only
+        // Attempt button (single tap to toggle, prevent accidental taps while scrolling)
+        const attemptBtn = e.target.closest('.attempt-btn');
+        if (attemptBtn && !attemptBtn.disabled && !this.#isScrolling) {
+            const card = attemptBtn.closest('.problem-card');
+            const problemId = parseInt(card.dataset.problemId, 10);
+            const attemptIndex = parseInt(attemptBtn.dataset.attemptIndex, 10);
+            this.#toggleAttempt(problemId, attemptIndex);
+            return;
+        }
+        
+        // Review text (single tap to edit, prevent accidental taps while scrolling)
+        const reviewText = e.target.closest('.review-text');
+        if (reviewText && !this.#isScrolling) {
+            const problemId = parseInt(reviewText.dataset.problemId, 10);
+            const attemptIndex = parseInt(reviewText.dataset.attemptIndex, 10);
+            this.#editReview(problemId, attemptIndex);
+            return;
+        }
     }
 
     // ==================== SCREEN NAVIGATION ====================
