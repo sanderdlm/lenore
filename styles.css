@@ -1,9 +1,3 @@
-/**
- * Yoku - Climbing Problem Tracker
- * Stylesheet
- */
-
-/* Variables */
 :root {
     /* Colors */
     --color-bg: #F8F9FA;
@@ -178,6 +172,7 @@ body {
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
+    position: relative;
 }
 
 .back-btn,
