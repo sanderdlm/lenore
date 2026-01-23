@@ -30,7 +30,7 @@
                 </template>
 
                 <template x-for="session in sessions" :key="session.id">
-                    <div class="session-card" @click="openSession(session.id)">
+                    <div class="session-card card" @click="openSession(session.id)">
                         <div class="session-info">
                             <div class="session-date" x-text="formatDate(session.createdAt)"></div>
                             <div class="session-meta">
@@ -46,10 +46,10 @@
         <!-- Tracker Screen -->
         <div class="tracker-screen" x-show="screen === 'tracker'">
             <header class="tracker-header">
-                <button class="back-btn" @click="screen = 'sessions'">← Back</button>
+                <button class="btn-secondary" @click="screen = 'sessions'">← Back</button>
                 <details class="problem-form-inline" x-ref="problemForm">
-                    <summary>Add problem</summary>
-                    <div class="form-content">
+                    <summary class="card">Add problem</summary>
+                    <div class="form-content card">
                         <label>Hold color</label>
                         <div class="color-palette">
                             <template x-for="color in holdColors" :key="color">
@@ -83,7 +83,7 @@
                 </div>
 
                 <template x-for="problem in (currentSession?.problems || [])" :key="problem.id">
-                    <article class="problem-card">
+                    <article class="problem-card card">
                         <div class="problem-header">
                             <div class="color-indicator" :class="problem.holdColor"></div>
                             <div class="color-divider"></div>
@@ -93,7 +93,7 @@
                         <div class="attempts-grid">
                             <template x-for="(attempt, index) in problem.attempts" :key="index">
                                 <button
-                                    class="attempt-btn"
+                                    class="attempt-btn card"
                                     :class="{ checked: attempt.checked }"
                                     :disabled="!attempt.checked && index !== getNextAttemptIndex(problem)"
                                     @click="toggleAttempt(problem, index)"
@@ -139,7 +139,7 @@
                 <div class="timer-display" x-text="display" @click="handleTap()"></div>
                 <div class="timer-controls">
                     <template x-for="m in [2, 3, 4, 5]" :key="m">
-                        <button class="timer-btn" @click="start(m)" x-text="m + 'm'"></button>
+                        <button class="timer-btn card" @click="start(m)" x-text="m + 'm'"></button>
                     </template>
                 </div>
             </footer>

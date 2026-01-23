@@ -72,6 +72,13 @@ body {
     padding-right: env(safe-area-inset-right, 0);
 }
 
+/* Shared Components */
+.card {
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+}
+
 /* Layout */
 #app {
     display: flex;
@@ -113,10 +120,7 @@ body {
 /* Cards */
 .session-card,
 .problem-card {
-    background: var(--color-surface);
     padding: var(--spacing-lg);
-    border-radius: var(--radius);
-    border: 2px solid var(--color-border);
     cursor: pointer;
 }
 
@@ -172,37 +176,37 @@ body {
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
-    position: relative;
 }
 
-.back-btn,
 .problem-form-inline summary,
 .timer-btn {
     padding: var(--spacing-sm) var(--spacing-lg);
-    background: var(--color-surface);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius);
     font-size: var(--font-size-base);
     font-weight: 600;
     cursor: pointer;
     color: var(--color-text-primary);
 }
 
-.back-btn {
-    width: auto;
-    flex-shrink: 0;
-}
-
 .problem-form-inline {
     flex: 1;
-    position: relative;
+}
+
+.tracker-header:has(.problem-form-inline[open]) {
+    flex-wrap: wrap;
+}
+
+.tracker-header:has(.problem-form-inline[open]) .btn-secondary {
+    display: none;
+}
+
+.problem-form-inline[open] {
+    flex-basis: 100%;
 }
 
 .problem-form-inline summary {
     list-style: none;
     user-select: none;
     outline: none;
-    cursor: unset;
     -webkit-tap-highlight-color: transparent;
 }
 
@@ -210,23 +214,8 @@ body {
     display: none;
 }
 
-.problem-form-inline[open] {
-    position: absolute;
-    left: var(--spacing-lg);
-    right: var(--spacing-lg);
-    top: var(--spacing-lg);
-    z-index: 100;
-}
-
-.problem-form-inline[open] summary {
-    margin-bottom: var(--spacing-lg);
-}
-
-.problem-form-inline[open] .form-content {
-    background: var(--color-surface);
+.problem-form-inline .form-content {
     padding: var(--spacing-lg);
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius);
     margin-top: var(--spacing-sm);
 }
 
@@ -312,6 +301,17 @@ label:first-child {
     background: var(--color-accent-hover);
 }
 
+.btn-secondary {
+    padding: var(--spacing-sm) var(--spacing-lg);
+    background: var(--color-surface);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--color-text-primary);
+}
+
 /* Problem Header */
 .problem-header {
     display: flex;
@@ -344,9 +344,6 @@ label:first-child {
 
 .attempt-btn {
     aspect-ratio: 1;
-    border: 2px solid var(--color-border);
-    background: var(--color-surface);
-    border-radius: var(--radius);
     font-size: 18px;
     font-weight: 600;
     display: flex;
