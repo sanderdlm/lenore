@@ -21,7 +21,7 @@
         <div class="sessions-screen" x-show="screen === 'sessions'">
             <header class="sessions-header">
                 <h1>Sessions</h1>
-                <button class="btn-primary new-session-btn" @click="createSession()">New Session</button>
+                <button class="btn-primary" @click="createSession()">New Session</button>
             </header>
 
             <main class="sessions-list">
@@ -45,130 +45,110 @@
 
         <!-- Tracker Screen -->
         <div class="tracker-screen" x-show="screen === 'tracker'">
-            <header>
-                <div class="tracker-header">
-                    <button class="back-btn" @click="screen = 'sessions'">← Back</button>
-                    <details class="problem-form-inline" x-ref="problemForm">
-                        <summary>Add problem</summary>
-
-                        <div class="form-content">
-                            <div class="form-group">
-                                <label>Hold color</label>
-                                <div class="color-palette">
-                                    <template x-for="(hex, name) in holdColors" :key="name">
-                                        <div
-                                            class="color-option"
-                                            :class="{ 'selected': selectedHold === name }"
-                                            :style="`background: ${hex}; ${hex === '#FFFFFF' ? 'border: 1px solid #ddd;' : ''}`"
-                                            @click="selectedHold = name"
-                                        ></div>
-                                    </template>
-                                </div>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Grade color</label>
-                                <div class="color-palette">
-                                    <template x-for="(hex, name) in gradeColors" :key="name">
-                                        <div
-                                            class="color-option"
-                                            :class="{ 'selected': selectedGrade === name }"
-                                            :style="`background: ${hex}; ${hex === '#FFFFFF' ? 'border: 1px solid #ddd;' : ''}`"
-                                            @click="selectedGrade = name"
-                                        ></div>
-                                    </template>
-                                </div>
-                            </div>
-
-                            <button class="btn-primary" @click="addProblem()">Add Problem</button>
+            <header class="tracker-header">
+                <button class="back-btn" @click="screen = 'sessions'">← Back</button>
+                <details class="problem-form-inline" x-ref="problemForm">
+                    <summary>Add problem</summary>
+                    <div class="form-content">
+                        <label>Hold color</label>
+                        <div class="color-palette">
+                            <template x-for="(hex, name) in holdColors" :key="name">
+                                <div
+                                    class="color-option"
+                                    :class="{ 'selected': selectedHold === name }"
+                                    :style="`background: ${hex}; ${hex === '#FFFFFF' ? 'border: 1px solid #ddd;' : ''}`"
+                                    @click="selectedHold = name"
+                                ></div>
+                            </template>
                         </div>
-                    </details>
-                </div>
+
+                        <label>Grade color</label>
+                        <div class="color-palette">
+                            <template x-for="(hex, name) in gradeColors" :key="name">
+                                <div
+                                    class="color-option"
+                                    :class="{ 'selected': selectedGrade === name }"
+                                    :style="`background: ${hex}; ${hex === '#FFFFFF' ? 'border: 1px solid #ddd;' : ''}`"
+                                    @click="selectedGrade = name"
+                                ></div>
+                            </template>
+                        </div>
+
+                        <button class="btn-primary" @click="addProblem()">Add Problem</button>
+                    </div>
+                </details>
             </header>
 
-            <main class="problems-list-container">
-                <section class="problems-list">
-                    <div class="empty-state" x-show="currentSession && currentSession.problems.length === 0">
-                        No problems yet. Add one above! 🧗
-                    </div>
+            <main class="problems-list">
+                <div class="empty-state" x-show="currentSession && currentSession.problems.length === 0">
+                    No problems yet. Add one above! 🧗
+                </div>
 
-                    <template x-for="problem in (currentSession?.problems || [])" :key="problem.id">
-                        <div class="problem-card">
-                            <div class="problem-header">
-                                <div
-                                    class="color-indicator"
-                                    :style="`background: ${problem.holdColor}; ${problem.holdColor === '#FFFFFF' ? 'border: 1px solid #E5E5EA;' : ''}`"
-                                ></div>
-                                <div class="color-divider"></div>
-                                <div
-                                    class="color-indicator"
-                                    :style="`background: ${problem.gradeColor}; ${problem.gradeColor === '#FFFFFF' ? 'border: 1px solid #E5E5EA;' : ''}`"
-                                ></div>
-                            </div>
+                <template x-for="problem in (currentSession?.problems || [])" :key="problem.id">
+                    <article class="problem-card">
+                        <div class="problem-header">
+                            <div
+                                class="color-indicator"
+                                :style="`background: ${problem.holdColor}; ${problem.holdColor === '#FFFFFF' ? 'border: 1px solid #E5E5EA;' : ''}`"
+                            ></div>
+                            <div class="color-divider"></div>
+                            <div
+                                class="color-indicator"
+                                :style="`background: ${problem.gradeColor}; ${problem.gradeColor === '#FFFFFF' ? 'border: 1px solid #E5E5EA;' : ''}`"
+                            ></div>
+                        </div>
 
-                            <div class="attempts-grid">
-                                <template x-for="(attempt, index) in problem.attempts" :key="index">
-                                    <button
-                                        class="attempt-btn"
-                                        :class="{
-                                            'checked': attempt.checked,
-                                            'disabled': !attempt.checked && index !== getNextAttemptIndex(problem)
-                                        }"
-                                        :disabled="!attempt.checked && index !== getNextAttemptIndex(problem)"
-                                        @click="toggleAttempt(problem, index)"
-                                    >
-                                        <span x-text="attempt.checked ? '✓' : index + 1"></span>
-                                    </button>
-                                </template>
-                            </div>
-
-                            <!-- Review tips and input for active review -->
-                            <template x-if="editingReview?.problemId === problem.id">
-                                <div>
-                                    <div class="review-tips">
-                                        <div class="review-tip">💡 Say something true & helpful about your attempt</div>
-                                        <div class="review-tip">🤔 Explain why you fell—avoid "I can't" or "it's too hard"</div>
-                                    </div>
-                                    <textarea
-                                        class="review-input show"
-                                        x-ref="reviewInput"
-                                        :value="problem.attempts[editingReview.attemptIndex]?.review || ''"
-                                        @blur="saveReview(problem, editingReview.attemptIndex, $event.target.value)"
-                                        placeholder="..."
-                                        rows="3"
-                                        x-init="$nextTick(() => $el.focus())"
-                                    ></textarea>
-                                </div>
-                            </template>
-
-                            <!-- Saved reviews -->
-                            <template x-for="(attempt, index) in problem.attempts" :key="'review-' + index">
-                                <div
-                                    x-show="attempt.review && !(editingReview?.problemId === problem.id && editingReview?.attemptIndex === index)"
-                                    class="review-text"
-                                    @click="startEditReview(problem.id, index)"
-                                >
-                                    <strong x-text="'Attempt ' + (index + 1) + ':'"></strong>
-                                    <span x-text="attempt.review"></span>
-                                </div>
+                        <div class="attempts-grid">
+                            <template x-for="(attempt, index) in problem.attempts" :key="index">
+                                <button
+                                    class="attempt-btn"
+                                    :class="{ checked: attempt.checked }"
+                                    :disabled="!attempt.checked && index !== getNextAttemptIndex(problem)"
+                                    @click="toggleAttempt(problem, index)"
+                                    x-text="attempt.checked ? '✓' : index + 1"
+                                ></button>
                             </template>
                         </div>
-                    </template>
-                </section>
+
+                        <!-- Review tips and input for active review -->
+                        <template x-if="editingReview?.problemId === problem.id">
+                            <div class="review-section">
+                                <ul class="review-tips">
+                                    <li>💡 Say something true & helpful about your attempt</li>
+                                    <li>🤔 Explain why you fell—avoid "I can't" or "it's too hard"</li>
+                                </ul>
+                                <textarea
+                                    class="review-input"
+                                    :value="problem.attempts[editingReview.attemptIndex]?.review || ''"
+                                    @blur="saveReview(problem, editingReview.attemptIndex, $event.target.value)"
+                                    placeholder="..."
+                                    rows="3"
+                                    x-init="$nextTick(() => $el.focus())"
+                                ></textarea>
+                            </div>
+                        </template>
+
+                        <!-- Saved reviews -->
+                        <template x-for="(attempt, index) in problem.attempts" :key="'review-' + index">
+                            <div
+                                x-show="attempt.review && !(editingReview?.problemId === problem.id && editingReview?.attemptIndex === index)"
+                                class="review-text"
+                                @click="startEditReview(problem.id, index)"
+                            >
+                                <strong x-text="'Attempt ' + (index + 1) + ':'"></strong>
+                                <span x-text="attempt.review"></span>
+                            </div>
+                        </template>
+                    </article>
+                </template>
             </main>
 
-            <footer>
-                <div class="timer-section" x-data="timer">
-                    <div
-                        class="timer-display"
-                        x-text="display"
-                        @click="handleTap()"
-                    ></div>
-                    <div class="timer-controls">
-                        <template x-for="m in [1, 2, 3, 4, 5]" :key="m">
-                            <button class="timer-btn" @click="start(m)" x-text="m + 'm'"></button>
-                        </template>
-                    </div>
+            <footer x-data="timer">
+                <div class="timer-display" x-text="display" @click="handleTap()"></div>
+                <div class="timer-controls">
+                    <template x-for="m in [1, 2, 3, 4, 5]" :key="m">
+                        <button class="timer-btn" @click="start(m)" x-text="m + 'm'"></button>
+                    </template>
                 </div>
             </footer>
         </div>
