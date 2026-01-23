@@ -39,11 +39,17 @@
     --font-size-xl: 28px;
 }
 
+/* Alpine cloak - hide until initialized */
+[x-cloak] {
+    display: none !important;
+}
+
 /* Reset & Base */
 * {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
 }
 
 html, body {
