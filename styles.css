@@ -113,6 +113,7 @@ body {
 
 .sessions-actions button {
     flex: 1;
+    width: 100%;
 }
 
 .sessions-list,
@@ -199,7 +200,7 @@ body {
 
 .problem-form-inline summary,
 .timer-btn {
-    padding: var(--spacing-sm) var(--spacing-lg);
+    padding: var(--spacing-md);
     font-size: var(--font-size-base);
     font-weight: 600;
     cursor: pointer;
@@ -235,7 +236,7 @@ body {
 
 .problem-form-inline .form-content {
     padding: var(--spacing-lg);
-    margin-top: var(--spacing-sm);
+    margin-top: var(--spacing-lg);
 }
 
 footer {
@@ -301,7 +302,6 @@ label:first-child {
 
 /* Buttons */
 .btn-primary {
-    width: 100%;
     padding: var(--spacing-md);
     border: none;
     border-radius: var(--radius);
@@ -318,7 +318,6 @@ label:first-child {
 }
 
 .btn-secondary {
-    width: 100%;
     padding: var(--spacing-md);
     background: var(--color-surface);
     border: 2px solid var(--color-border);
@@ -517,5 +516,6 @@ label:first-child {
 
 .modal-actions button {
     flex: 1;
+    width: 100%;
 }
 
