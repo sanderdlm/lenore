@@ -1,46 +1,70 @@
 /**
- * Bankan - Climbing Problem Tracker
- * Alpine.js version
+ * Yoku - Climbing Problem Tracker
  */
 
-const STORAGE_KEY = 'bankan_sessions';
+const STORAGE_KEY = 'yoku_sessions';
+const OLD_STORAGE_KEY = 'bankan_sessions';
 
-const HOLD_COLORS = {
-    green: '#52C47B',
-    yellow: '#FFD93D',
-    orange: '#FF8A5C',
-    blue: '#4A90E2',
-    red: '#FF6B6B',
-    black: '#2C2C2E',
-    white: '#FFFFFF',
-    purple: '#9B7FD8',
-    teal: '#4ECDC4',
-    pink: '#FF85A2'
+const HOLD_COLORS = ['green', 'yellow', 'orange', 'blue', 'red', 'black', 'white', 'purple', 'teal', 'pink'];
+const GRADE_COLORS = ['green', 'yellow', 'orange', 'blue', 'red', 'black', 'white', 'purple'];
+
+const HEX_TO_COLOR = {
+    '#52C47B': 'green',
+    '#FFD93D': 'yellow',
+    '#FF8A5C': 'orange',
+    '#4A90E2': 'blue',
+    '#FF6B6B': 'red',
+    '#2C2C2E': 'black',
+    '#FFFFFF': 'white',
+    '#9B7FD8': 'purple',
+    '#4ECDC4': 'teal',
+    '#FF85A2': 'pink'
 };
 
-const GRADE_COLORS = {
-    green: '#52C47B',
-    yellow: '#FFD93D',
-    orange: '#FF8A5C',
-    blue: '#4A90E2',
-    red: '#FF6B6B',
-    black: '#2C2C2E',
-    white: '#FFFFFF',
-    purple: '#9B7FD8'
-};
+function migrateHexToColorName(color) {
+    return color?.startsWith('#') ? (HEX_TO_COLOR[color] || 'blue') : color;
+}
 
 // Persistence helpers
 function loadSessions() {
     try {
+        // Migrate from old storage key
+        const oldData = localStorage.getItem(OLD_STORAGE_KEY);
+        if (oldData && !localStorage.getItem(STORAGE_KEY)) {
+            localStorage.setItem(STORAGE_KEY, oldData);
+            localStorage.removeItem(OLD_STORAGE_KEY);
+        }
+
         const saved = localStorage.getItem(STORAGE_KEY);
         if (saved) {
             const parsed = JSON.parse(saved);
             if (Array.isArray(parsed)) {
-                return parsed.filter(s =>
+                const sessions = parsed.filter(s =>
                     s && typeof s.id === 'number' &&
                     typeof s.createdAt === 'number' &&
                     Array.isArray(s.problems)
                 );
+
+                // Migrate hex colors to color names
+                let needsSave = false;
+                sessions.forEach(session => {
+                    session.problems.forEach(problem => {
+                        if (problem.holdColor?.startsWith('#')) {
+                            problem.holdColor = migrateHexToColorName(problem.holdColor);
+                            needsSave = true;
+                        }
+                        if (problem.gradeColor?.startsWith('#')) {
+                            problem.gradeColor = migrateHexToColorName(problem.gradeColor);
+                            needsSave = true;
+                        }
+                    });
+                });
+
+                if (needsSave) {
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(sessions));
+                }
+
+                return sessions;
             }
         }
     } catch (e) {
@@ -141,7 +165,7 @@ document.addEventListener('alpine:init', () => {
     }));
 
     // Main app component
-    Alpine.data('bankan', () => ({
+    Alpine.data('yoku', () => ({
         screen: 'sessions',
         sessions: loadSessions(),
         currentSessionId: null,
@@ -190,8 +214,8 @@ document.addEventListener('alpine:init', () => {
 
             session.problems.push({
                 id: Date.now(),
-                holdColor: HOLD_COLORS[this.selectedHold],
-                gradeColor: GRADE_COLORS[this.selectedGrade],
+                holdColor: this.selectedHold,
+                gradeColor: this.selectedGrade,
                 attempts: Array.from({ length: 5 }, () => ({ checked: false, review: '' }))
             });
 

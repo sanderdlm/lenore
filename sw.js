@@ -1,5 +1,5 @@
-const CACHE_VERSION = 'v2.0.3';
-const CACHE_NAME = `bankan-${CACHE_VERSION}`;
+const CACHE_VERSION = 'v2.0.5';
+const CACHE_NAME = `yoku-${CACHE_VERSION}`;
 const urlsToCache = [
   './',
   './index.html',

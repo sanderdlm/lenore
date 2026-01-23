@@ -1,6 +1,6 @@
 {
-  "name": "Bankan - Boulder Tracker",
-  "short_name": "Bankan",
+  "name": "Yoku - Boulder Tracker",
+  "short_name": "Yoku",
   "description": "Track your bouldering attempts and progress",
   "start_url": "https://sanderdlm.github.io/lenore/",
   "display": "standalone",
