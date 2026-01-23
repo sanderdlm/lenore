@@ -4,10 +4,6 @@
 
 const STORAGE_KEY = 'yoku_sessions';
 
-function migrateHexToColorName(color) {
-    return color?.startsWith('#') ? (HEX_TO_COLOR[color] || 'blue') : color;
-}
-
 // Persistence helpers
 function loadSessions() {
     try {
@@ -64,6 +60,9 @@ function vibrate(duration = 50) {
         navigator.vibrate(duration);
     }
 }
+
+const HOLD_COLORS = ['green', 'yellow', 'orange', 'blue','red', 'black', 'white', 'purple', 'teal', 'pink'];
+const GRADE_COLORS = ['green', 'yellow', 'orange', 'blue', 'red', 'black', 'white', 'purple'];
 
 // Main app component
 document.addEventListener('alpine:init', () => {
@@ -159,6 +158,48 @@ document.addEventListener('alpine:init', () => {
             if (confirm('Delete this session?')) {
                 this.sessions = this.sessions.filter(s => s.id !== id);
                 this.save();
+            }
+        },
+
+        async exportSession(id) {
+            const session = this.sessions.find(s => s.id === id);
+            if (!session) return;
+
+            // Generate formatted text overview
+            const lines = [];
+            lines.push(`Session: ${formatDate(session.createdAt)}`);
+            lines.push(`Problems: ${session.problems.length}`);
+            lines.push('');
+
+            session.problems.forEach((problem, idx) => {
+                lines.push(`Problem ${idx + 1}: ${problem.holdColor} holds / ${problem.gradeColor} grade`);
+
+                const checkedAttempts = problem.attempts.filter(a => a.checked);
+                lines.push(`  Attempts: ${checkedAttempts.length}`);
+
+                checkedAttempts.forEach((attempt, attemptIdx) => {
+                    lines.push(`  Attempt ${attemptIdx + 1}:`);
+                    if (attempt.review && attempt.review.trim()) {
+                        lines.push(`    ${attempt.review.trim()}`);
+                    } else {
+                        lines.push(`    (no review)`);
+                    }
+                });
+
+                lines.push('');
+            });
+
+            const text = lines.join('\n');
+
+            // Copy to clipboard using Clipboard API (works on iOS PWA)
+            try {
+                await navigator.clipboard.writeText(text);
+                vibrate(50);
+                // Visual feedback could be added here if desired
+            } catch (err) {
+                console.error('Failed to copy to clipboard:', err);
+                // Fallback: show alert with text
+                alert('Export failed. Here\'s the text:\n\n' + text);
             }
         },
 

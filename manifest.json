@@ -1,11 +1,11 @@
 {
-  "name": "Yoku - Boulder Tracker",
+  "name": "Yoku",
   "short_name": "Yoku",
   "description": "Track your bouldering attempts and progress",
   "start_url": "https://sanderdlm.github.io/lenore/",
   "display": "standalone",
-  "background_color": "#F8F9FA",
-  "theme_color": "#2C2C2E",
+  "background_color": "#FFFFFF",
+  "theme_color": "#1C1C1E",
   "icons": [
     {
       "src": "512.svg",

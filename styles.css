@@ -150,7 +150,8 @@ body {
     color: var(--color-text-tertiary);
 }
 
-.session-delete-btn {
+.session-delete-btn,
+.session-export-btn {
     width: 32px;
     height: 32px;
     min-width: 32px;
@@ -159,7 +160,7 @@ body {
     background: transparent;
     color: var(--color-text-primary);
     border: none;
-    font-size: 32px;
+    font-size: 24px;
     line-height: 1;
     display: flex;
     align-items: center;
@@ -167,7 +168,16 @@ body {
     cursor: pointer;
 }
 
-.session-delete-btn:active {
+.session-delete-btn {
+    font-size: 32px;
+}
+
+.session-export-btn {
+    margin-right: var(--spacing-sm);
+}
+
+.session-delete-btn:active,
+.session-export-btn:active {
     opacity: 0.5;
 }
 
@@ -276,10 +286,8 @@ label:first-child {
     box-shadow: var(--shadow);
 }
 
-.color-option.selected {
-    border-color: var(--color-focus);
-    transform: scale(1.1);
-    box-shadow: 0 4px 8px rgba(0,122,255,0.3);
+.color-palette .color-option.selected {
+    border-color: var(--color-accent);
 }
 
 /* Buttons */
@@ -310,6 +318,10 @@ label:first-child {
     font-weight: 600;
     cursor: pointer;
     color: var(--color-text-primary);
+}
+
+.add-problem {
+    margin-top: var(--spacing-lg);
 }
 
 /* Problem Header */
@@ -352,11 +364,6 @@ label:first-child {
     cursor: pointer;
     padding: 0;
     color: var(--color-text-tertiary);
-    box-shadow: var(--shadow);
-}
-
-.attempt-btn:active:not(:disabled) {
-    transform: scale(0.95);
 }
 
 .attempt-btn:disabled {
@@ -365,10 +372,11 @@ label:first-child {
 }
 
 .attempt-btn.checked {
-    background: var(--color-pink);
-    border-color: var(--color-pink);
+    background: var(--color-green);
+    border: solid 2px var(--color-green);
     color: var(--color-surface);
 }
+
 
 /* Hold/Grade Color Classes */
 .green { background: var(--color-green); }
