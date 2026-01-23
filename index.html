@@ -146,7 +146,7 @@
             <footer x-data="timer">
                 <div class="timer-display" x-text="display" @click="handleTap()"></div>
                 <div class="timer-controls">
-                    <template x-for="m in [1, 2, 3, 4, 5]" :key="m">
+                    <template x-for="m in [2, 3, 4, 5]" :key="m">
                         <button class="timer-btn" @click="start(m)" x-text="m + 'm'"></button>
                     </template>
                 </div>

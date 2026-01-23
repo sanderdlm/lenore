@@ -85,7 +85,7 @@ body {
 
 .sessions-header {
     flex-shrink: 0;
-    padding: 0 var(--spacing-lg) var(--spacing-lg) var(--spacing-lg);
+    padding: var(--spacing-lg);
     background: var(--color-bg);
 }
 
@@ -169,7 +169,6 @@ body {
     align-items: center;
     gap: var(--spacing-md);
     padding: var(--spacing-lg);
-    padding-top: 0;
 }
 
 .back-btn,
@@ -211,7 +210,7 @@ body {
     position: absolute;
     left: var(--spacing-lg);
     right: var(--spacing-lg);
-    top: 0;
+    top: var(--spacing-lg);
     z-index: 100;
 }
 
@@ -229,7 +228,7 @@ body {
 
 footer {
     flex-shrink: 0;
-    padding: var(--spacing-sm) var(--spacing-lg) 0 var(--spacing-lg);
+    padding: var(--spacing-sm) var(--spacing-lg) 0;
     background: var(--color-bg);
 }
 
@@ -247,7 +246,7 @@ footer {
 
 .timer-controls {
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: var(--spacing-sm);
 }
 
