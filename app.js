@@ -128,6 +128,8 @@ document.addEventListener('alpine:init', () => {
         editingReview: null,
         holdColors: HOLD_COLORS,
         gradeColors: GRADE_COLORS,
+        showImportModal: false,
+        importJson: '',
 
         get currentSession() {
             return this.sessions.find(s => s.id === this.currentSessionId);
@@ -165,41 +167,61 @@ document.addEventListener('alpine:init', () => {
             const session = this.sessions.find(s => s.id === id);
             if (!session) return;
 
-            // Generate formatted text overview
-            const lines = [];
-            lines.push(`Session: ${formatDate(session.createdAt)}`);
-            lines.push(`Problems: ${session.problems.length}`);
-            lines.push('');
-
-            session.problems.forEach((problem, idx) => {
-                lines.push(`Problem ${idx + 1}: ${problem.holdColor} holds / ${problem.gradeColor} grade`);
-
-                const checkedAttempts = problem.attempts.filter(a => a.checked);
-                lines.push(`  Attempts: ${checkedAttempts.length}`);
-
-                checkedAttempts.forEach((attempt, attemptIdx) => {
-                    lines.push(`  Attempt ${attemptIdx + 1}:`);
-                    if (attempt.review && attempt.review.trim()) {
-                        lines.push(`    ${attempt.review.trim()}`);
-                    } else {
-                        lines.push(`    (no review)`);
-                    }
-                });
-
-                lines.push('');
-            });
-
-            const text = lines.join('\n');
+            // Export session as JSON
+            const json = JSON.stringify(session, null, 2);
 
             // Copy to clipboard using Clipboard API (works on iOS PWA)
             try {
-                await navigator.clipboard.writeText(text);
+                await navigator.clipboard.writeText(json);
                 vibrate(50);
-                // Visual feedback could be added here if desired
             } catch (err) {
                 console.error('Failed to copy to clipboard:', err);
-                // Fallback: show alert with text
-                alert('Export failed. Here\'s the text:\n\n' + text);
+                alert('Export failed. Here\'s the JSON:\n\n' + json);
+            }
+        },
+
+        openImportModal() {
+            this.showImportModal = true;
+            this.importJson = '';
+        },
+
+        closeImportModal() {
+            this.showImportModal = false;
+            this.importJson = '';
+        },
+
+        importSession() {
+            try {
+                const session = JSON.parse(this.importJson.trim());
+
+                // Validate session structure
+                if (!session || typeof session.id !== 'number' ||
+                    typeof session.createdAt !== 'number' ||
+                    !Array.isArray(session.problems)) {
+                    throw new Error('Invalid session format');
+                }
+
+                // Check if session already exists
+                const existingIndex = this.sessions.findIndex(s => s.id === session.id);
+                if (existingIndex >= 0) {
+                    // Replace existing session
+                    if (confirm('This session already exists. Replace it?')) {
+                        this.sessions[existingIndex] = session;
+                    } else {
+                        this.closeImportModal();
+                        return;
+                    }
+                } else {
+                    // Add new session
+                    this.sessions.unshift(session);
+                }
+
+                this.save();
+                vibrate(50);
+                this.closeImportModal();
+            } catch (err) {
+                console.error('Import failed:', err);
+                alert('Import failed: Invalid JSON format');
             }
         },
 

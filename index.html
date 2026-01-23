@@ -21,7 +21,10 @@
         <div class="sessions-screen" x-show="screen === 'sessions'">
             <header class="sessions-header">
                 <h1>Sessions</h1>
-                <button class="btn-primary" @click="createSession()">New Session</button>
+                <div class="sessions-actions">
+                    <button class="btn-secondary" @click="openImportModal()">Import</button>
+                    <button class="btn-primary" @click="createSession()">New Session</button>
+                </div>
             </header>
 
             <main class="sessions-list">
@@ -144,6 +147,23 @@
                 </div>
             </footer>
         </div>
+
+        <!-- Import Modal -->
+        <div class="modal-overlay" x-show="showImportModal" @click="closeImportModal()" x-cloak>
+            <div class="modal-content card" @click.stop>
+                <h2>Import Session</h2>
+                <p>Paste the exported JSON data below:</p>
+                <textarea
+                    class="import-textarea"
+                    x-model="importJson"
+                    placeholder='{"id": 1234567890, "createdAt": 1234567890, "problems": [...]}'
+                    rows="10"
+                ></textarea>
+                <div class="modal-actions">
+                    <button class="btn-secondary" @click="closeImportModal()">Cancel</button>
+                    <button class="btn-primary" @click="importSession()">Import</button>
+                </div>
+            </div>
+        </div>
     </div>
-</body>
 </html>
