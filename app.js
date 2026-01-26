@@ -255,6 +255,10 @@ document.addEventListener('alpine:init', () => {
             const attempt = problem.attempts[index];
 
             if (attempt.checked) {
+                // Confirm before unchecking
+                if (!confirm('Uncheck this attempt? This will clear any review data.')) {
+                    return;
+                }
                 // Uncheck and clear review
                 attempt.checked = false;
                 attempt.review = '';
